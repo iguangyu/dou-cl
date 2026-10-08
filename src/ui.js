@@ -3,23 +3,20 @@
 const readline = require('readline');
 const C = require('./core/cards');
 const combo = require('./core/combo');
+const color = require('./color');
+const skins = require('./skins');
 
 /* ------------------------------------------------------------------ */
-/* 颜色                                                               */
+/* 颜色（统一由 color.js 提供，便于伪装皮肤复用）                     */
 /* ------------------------------------------------------------------ */
 
-const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
-
-function col(code, s) {
-  if (!useColor) return s;
-  return '\u001b[' + code + 'm' + s + '\u001b[0m';
-}
-const red = function (s) { return col('31', s); };
-const bold = function (s) { return col('1', s); };
-const dim = function (s) { return col('2', s); };
-const cyan = function (s) { return col('36', s); };
-const yellow = function (s) { return col('33', s); };
-const green = function (s) { return col('32', s); };
+const red = color.red;
+const bold = color.bold;
+const dim = color.dim;
+const cyan = color.cyan;
+const yellow = color.yellow;
+const green = color.green;
+const useColor = color.isEnabled();
 
 /* ------------------------------------------------------------------ */
 /* 牌面渲染                                                           */
@@ -296,9 +293,13 @@ class IO {
   }
 
   ask(prompt, handler) {
-    if (prompt) process.stdout.write(prompt);
     this.handler = handler;
-    if (this.rl.terminal && this.rl.prompt) this.rl.prompt();
+    if (this.rl.terminal) {
+      this.rl.setPrompt(prompt || '> ');
+      this.rl.prompt();
+    } else if (prompt) {
+      process.stdout.write(prompt);
+    }
   }
 
   /** 打印一行，不影响正在输入的内容 */
@@ -309,6 +310,20 @@ class IO {
       if (this.handler) this.rl.prompt(true);
     } else {
       process.stdout.write(text + '\n');
+    }
+  }
+
+  /** 追加一段多行输出（伪装皮肤用，不清屏） */
+  block(text) {
+    if (text === undefined || text === null) return;
+    const s = String(text).replace(/\n+$/, '');
+    if (!s) return;
+    if (this.rl.terminal) {
+      process.stdout.write('\r\u001b[K');
+      process.stdout.write(s + '\n');
+      if (this.handler) this.rl.prompt(true);
+    } else {
+      process.stdout.write(s + '\n');
     }
   }
 
@@ -326,6 +341,29 @@ class IO {
 }
 
 /* ------------------------------------------------------------------ */
+/* 伪装皮肤入口                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 统一渲染入口：
+ *   开了伪装皮肤 -> 让皮肤把状态塞进自己的壳里（返回多行文本，调用方直接追加输出）
+ *   没开         -> 返回 null，调用方走原生牌桌 renderTable
+ */
+function renderSkin(view, seat, opts) {
+  return skins.render(view, seat, opts);
+}
+
+function setSkin(key) { skins.setKey(key); }
+function skinKey() { return skins.getKey(); }
+function skinActive() { return skins.isActive(); }
+function skinList() { return skins.list(); }
+function skinAppends() { return skins.appends(); }
+function resetSkin() { skins.reset(); }
+function skinPrompt() { return skins.prompt(); }
+function skinHelp(rules) { return skins.help(rules); }
+function skinMessage(text) { return skins.message(text); }
+
+/* ------------------------------------------------------------------ */
 
 function sleep(ms) {
   return new Promise(function (r) { setTimeout(r, ms); });
@@ -334,12 +372,24 @@ function sleep(ms) {
 module.exports = {
   IO: IO,
   renderTable: renderTable,
+  renderSkin: renderSkin,
+  setSkin: setSkin,
+  skinKey: skinKey,
+  skinActive: skinActive,
+  skinList: skinList,
+  skinAppends: skinAppends,
+  resetSkin: resetSkin,
+  skinPrompt: skinPrompt,
+  skinHelp: skinHelp,
+  skinMessage: skinMessage,
   parseCardInput: parseCardInput,
   handText: handText,
   cardTextCompact: cardTextCompact,
   setAscii: setAscii,
   sleep: sleep,
   pad: pad,
-  colors: { red: red, bold: bold, dim: dim, cyan: cyan, yellow: yellow, green: green },
+  colors: { red: red, bold: bold, dim: dim, cyan: cyan, yellow: yellow, green: green, gray: color.gray },
+  color: color,
   hasColor: useColor,
+  skins: skins,
 };

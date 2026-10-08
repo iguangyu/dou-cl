@@ -1,7 +1,7 @@
 {
   "name": "dou-cl",
   "version": "1.0.0",
-  "description": "命令行斗地主 / 跑得快 / 510K —— 支持单机对战与联网匹配，纯终端操作",
+  "description": "命令行斗地主 / 跑得快 / 510K —— 默认把牌桌伪装成普通开发输出（日志/hexdump/JSON/git diff），支持单机与联网对战",
   "keywords": [
     "doudizhu",
     "斗地主",
@@ -10,33 +10,53 @@
     "cli",
     "game",
     "card-game",
-    "terminal"
+    "terminal",
+    "tui",
+    "stealth"
   ],
   "license": "MIT",
+  "author": "iguangyu",
+  "homepage": "https://github.com/iguangyu/dou-cl#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iguangyu/dou-cl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iguangyu/dou-cl/issues"
+  },
   "engines": {
     "node": ">=16"
   },
   "bin": {
     "dou-cl": "bin/dou-cl.js",
-    "doucl": "bin/dou-cl.js",
-    "doudizhu": "bin/dou-cl.js"
+    "doucl": "bin/dou-cl.js"
   },
   "main": "src/app.js",
   "files": [
     "bin",
     "src",
-    "README.md"
+    "README.md",
+    "PUBLISH.md",
+    "LICENSE"
   ],
   "scripts": {
     "start": "node bin/dou-cl.js",
     "serve": "node bin/dou-cl.js --serve",
-    "test": "node test/sim.js && node test/smoke.js",
+    "plain": "node bin/dou-cl.js --skin term",
+    "hex": "node bin/dou-cl.js --skin hex",
+    "test": "node test/sim.js && node test/smoke.js && node test/local-test.js && node test/skins-test.js",
     "sim": "node test/sim.js",
     "smoke": "node test/smoke.js",
-    "preview": "node test/make-preview.js"
+    "local": "node test/local-test.js",
+    "skins": "node test/skins-test.js",
+    "preview": "node test/make-preview.js",
+    "prepublishOnly": "npm test"
   },
   "dependencies": {
     "ws": "^8.18.0"
   },
-  "preferGlobal": true
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  }
 }

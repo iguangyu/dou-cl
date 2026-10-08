@@ -13,6 +13,7 @@ const rulesMod = require('../src/core/rules');
 const gamesMod = require('../src/games');
 const ui = require('../src/ui');
 const app = require('../src/app');
+const skins = require('../src/skins');
 
 const colors = ui.colors;
 
@@ -21,10 +22,10 @@ function usage() {
   console.log(colors.bold('  dou-cl  v' + pkg.version) + colors.dim('   命令行斗地主 / 跑得快 / 510K'));
   console.log('');
   console.log(colors.bold('  用法'));
-  console.log('    npx dou-cl                        进菜单（最简单的用法）');
-  console.log('    npx dou-cl -g doudizhu            直接开一局单机斗地主');
-  console.log('    npx dou-cl -g paodekuai           单机跑得快');
-  console.log('    npx dou-cl -g fivek               单机 510K');
+  console.log('    npx dou-cl                        进菜单（默认就是摸鱼模式）');
+  console.log('    npx dou-cl -g doudizhu            直接开一局斗地主（跳过菜单，最隐蔽）');
+  console.log('    npx dou-cl -g paodekuai           跑得快');
+  console.log('    npx dou-cl -g fivek               510K');
   console.log('');
   console.log(colors.bold('  联网'));
   console.log('    npx dou-cl --serve                在本机 8080 端口开服务器');
@@ -32,6 +33,12 @@ function usage() {
   console.log('    npx dou-cl --create doudizhu      连服务器并开一个房间');
   console.log('    npx dou-cl --join 1.2.3.4:8080 --code ABCD');
   console.log('    npx dou-cl --match doudizhu --server 1.2.3.4:8080   快速匹配');
+  console.log('');
+  console.log(colors.bold('  摸鱼模式') + colors.dim('（默认开启，牌桌伪装成看起来正常的开发输出）'));
+  console.log('    npx dou-cl --skin hex             换皮肤： log(默认) / hex / json / diff');
+  console.log('    npx dou-cl --skin term            关掉伪装，显示原生牌桌');
+  console.log('    npx dou-cl --skins                列出所有皮肤');
+  console.log(colors.dim('      游戏里随时可以： reveal 看真身 / skin <名> 换皮肤 / ? 帮助'));
   console.log('');
   console.log(colors.bold('  其他'));
   console.log('    --name <昵称>    联网时显示的名字');
@@ -62,10 +69,13 @@ function parseArgs(argv) {
     port: Number(process.env.DOUCL_PORT) || 8080,
     speed: 700,
     ascii: false,
+    skin: process.env.DOUCL_SKIN || require('../src/skins').DEFAULT_SKIN,
+    listSkins: false,
     help: false,
     version: false,
   };
   const args = argv.slice(2);
+  const skinKeys = skins.list().map(function (s) { return s.key; });
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     const next = function () { return args[++i]; };
@@ -85,14 +95,29 @@ function parseArgs(argv) {
       case '--speed': o.speed = Number(next()) || 700; break;
       case '--ascii': o.ascii = true; break;
       case '--no-color': process.env.NO_COLOR = '1'; break;
+      case '--skins': case '--list-skins': o.listSkins = true; break;
+      case '--plain': case '--term': case '--no-stealth': o.skin = 'term'; break;
+      case '--skin': o.skin = next() || 'log'; break;
+      // 兼容旧写法：--stealth 现在就是默认行为，带上它只是可选地指定皮肤
+      case '--stealth': case '--moyu': case '--blend':
+        o.skin = 'log';
+        if (args[i + 1] && skinKeys.indexOf(args[i + 1]) >= 0) o.skin = args[++i];
+        break;
+      case '-s':
+        o.skin = 'log';
+        break;
       default:
         if (a && a[0] !== '-') {
-          if (gamesMod.keys.indexOf(a) >= 0) { o.mode = 'local'; o.game = a; }
+          if (gamesMod.keys.indexOf(a) >= 0) { o.mode = o.mode === 'menu' ? 'local' : o.mode; o.game = a; }
         }
     }
   }
   if (o.game && gamesMod.keys.indexOf(o.game) < 0) {
     console.error('未知玩法：' + o.game + '（可选：' + gamesMod.keys.join(', ') + '）');
+    process.exit(1);
+  }
+  if (o.skin && o.skin !== 'term' && skinKeys.indexOf(o.skin) < 0) {
+    console.error('没有这个皮肤：' + o.skin + '（可选：term, ' + skinKeys.join(', ') + '）');
     process.exit(1);
   }
   if (o.speed < 0) o.speed = 0;
@@ -103,8 +128,22 @@ async function main() {
   const opts = parseArgs(process.argv);
   ui.setAscii(opts.ascii);
 
+  if (opts.listSkins) {
+    console.log('');
+    console.log(colors.bold('  伪装皮肤') + colors.dim('   （默认 log，游戏里敲 skin <名> 可以随时换）'));
+    skins.list().forEach(function (s) {
+      const mark = (s.key === skins.DEFAULT_SKIN) ? colors.green(' (默认)') : '';
+      console.log('    ' + colors.bold(s.key.padEnd(7)) + colors.dim(s.desc) + mark);
+    });
+    console.log('    ' + colors.bold('term'.padEnd(7)) + colors.dim('原生牌桌（关掉伪装，用 --skin term）'));
+    console.log('');
+    return;
+  }
+
   if (opts.help) { usage(); return; }
   if (opts.version) { console.log(pkg.version); return; }
+
+  ui.setSkin(opts.skin);
 
   if (opts.mode === 'serve') {
     const server = require('../src/net/server');
