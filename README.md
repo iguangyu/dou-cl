@@ -320,9 +320,3 @@ npm run preview            # 生成 预览.html
 ## License
 
 MIT
-
-想把改动发到 npm？看 [PUBLISH.md](https://github.com/iguangyu/dou-cl/blob/main/PUBLISH.md)。
-
-> 顺带说一句：这个 README 里的所有截图都是 `tools/make-docs.js`
-> 用**项目真实的渲染器**跑出来再截的，不是手画的 —— 改了输出之后
-> `node tools/make-docs.js` 重跑一下就同步了。
