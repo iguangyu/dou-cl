@@ -1,7 +1,7 @@
 {
   "name": "dou-cl",
   "version": "1.0.1",
-  "description": "命令行斗地主 / 跑得快 / 510K —— 默认把牌桌伪装成普通开发输出（日志/hexdump/JSON/git diff），支持单机与联网对战",
+  "description": "伪装成开发控制台的命令行牌桌 —— 斗地主 / 跑得快 / 510K，牌局藏在终端里",
   "keywords": [
     "doudizhu",
     "斗地主",
