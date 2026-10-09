@@ -1,6 +1,6 @@
 {
   "name": "dou-cl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "命令行斗地主 / 跑得快 / 510K —— 默认把牌桌伪装成普通开发输出（日志/hexdump/JSON/git diff），支持单机与联网对战",
   "keywords": [
     "doudizhu",
@@ -44,12 +44,14 @@
     "serve": "node bin/dou-cl.js --serve",
     "plain": "node bin/dou-cl.js --skin term",
     "hex": "node bin/dou-cl.js --skin hex",
-    "test": "node test/sim.js && node test/smoke.js && node test/local-test.js && node test/skins-test.js",
+    "test": "node test/sim.js && node test/smoke.js && node test/local-test.js && node test/skins-test.js && node test/exercise-test.js",
     "sim": "node test/sim.js",
     "smoke": "node test/smoke.js",
     "local": "node test/local-test.js",
     "skins": "node test/skins-test.js",
+    "drill": "node test/exercise-test.js",
     "preview": "node test/make-preview.js",
+    "docs": "node tools/make-docs.js",
     "prepublishOnly": "npm test"
   },
   "dependencies": {

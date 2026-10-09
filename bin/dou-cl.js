@@ -70,6 +70,7 @@ function parseArgs(argv) {
     speed: 700,
     ascii: false,
     skin: process.env.DOUCL_SKIN || require('../src/skins').DEFAULT_SKIN,
+    exercise: null,
     listSkins: false,
     help: false,
     version: false,
@@ -98,6 +99,17 @@ function parseArgs(argv) {
       case '--skins': case '--list-skins': o.listSkins = true; break;
       case '--plain': case '--term': case '--no-stealth': o.skin = 'term'; break;
       case '--skin': o.skin = next() || 'log'; break;
+      // 训练模式：刻意不写进 usage()，只有知道的人会用
+      case '-e': case '--exercise': case '--drill': {
+        o.mode = 'exercise';
+        o.exercise = 'menu';
+        const nxt = args[i + 1];
+        if (nxt && nxt[0] !== '-' &&
+            (require('../src/exercise').DRILLS.indexOf(nxt) >= 0 || nxt === 'mixed')) {
+          o.exercise = args[++i];
+        }
+        break;
+      }
       // 兼容旧写法：--stealth 现在就是默认行为，带上它只是可选地指定皮肤
       case '--stealth': case '--moyu': case '--blend':
         o.skin = 'log';
@@ -108,7 +120,8 @@ function parseArgs(argv) {
         break;
       default:
         if (a && a[0] !== '-') {
-          if (gamesMod.keys.indexOf(a) >= 0) { o.mode = o.mode === 'menu' ? 'local' : o.mode; o.game = a; }
+          if (a === 'exercise' || a === 'drill') { o.mode = 'exercise'; o.exercise = 'menu'; }
+          else if (gamesMod.keys.indexOf(a) >= 0) { o.mode = o.mode === 'menu' ? 'local' : o.mode; o.game = a; }
         }
     }
   }
@@ -144,6 +157,14 @@ async function main() {
   if (opts.version) { console.log(pkg.version); return; }
 
   ui.setSkin(opts.skin);
+
+  if (opts.mode === 'exercise') {
+    const exercise = require('../src/exercise');
+    const io = new ui.IO();
+    io.onClose = function () { process.exit(0); };
+    await exercise.run(io, opts, opts.exercise || 'menu');
+    return;
+  }
 
   if (opts.mode === 'serve') {
     const server = require('../src/net/server');
