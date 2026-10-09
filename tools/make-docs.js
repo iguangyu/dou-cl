@@ -302,35 +302,11 @@ function main() {
   // ---- logo ----
   shots.push(shoot('logo', logoSrc()));
 
-  // ---- 菜单 ----
-  const mio = captureIO();
-  app.showMenu(mio, { server: '127.0.0.1:8080', port: 8080, speed: 700, skin: 'log' });
-  shots.push(shoot('menu', win('dou-cl', trim(mio.lines.join('\n')))));
-
-  // ---- 原生牌桌 ----
-  shots.push(shoot('table', win('dou-cl -g doudizhu --skin term', trim(midGame('doudizhu', 6, null)))));
-
-  // ---- 四种伪装皮肤 ----
+  // ---- 四种伪装皮肤（README 只引用 logo + 这四张）----
   shots.push(shoot('skin-log', win('tail -f logs/deck-sync.log', trim(midGame('doudizhu', 7, 'log')))));
   shots.push(shoot('skin-hex', win('xxd -c 24 logs/deck-sync.log', trim(midGame('fivek', 9, 'hex')))));
   shots.push(shoot('skin-json', win('ws-client', trim(midGame('paodekuai', 9, 'json')))));
   shots.push(shoot('skin-diff', win('git diff -U50 -- src/deck/session.yaml', trim(midGame('doudizhu', 10, 'diff')))));
-
-  // ---- 联网房间 ----
-  const net = [
-    '',
-    '  房间 ABCD   斗地主 \u00b7 3 人',
-    '  ' + '\u2500'.repeat(50),
-    '   1号位  你',
-    '   2号位  阿飞',
-    '   3号位  空',
-    '  ' + '\u2500'.repeat(50),
-    '   把房间号发给朋友，或让他们执行：',
-    '   npx dou-cl --join 192.168.1.10:8080 --code ABCD',
-    '',
-    '  按 Enter 开始游戏（不足的位置由电脑补上）> ',
-  ].join('\n');
-  shots.push(shoot('net', win('dou-cl --create doudizhu', trim(net))));
 
   console.log('\n共 ' + shots.length + ' 张，输出到 docs/');
 }

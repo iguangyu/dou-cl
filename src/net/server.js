@@ -1,5 +1,18 @@
 'use strict';
 
+/*
+ * 联网服务端 —— **一个端口就是一个房间**。
+ *
+ *   npx dou-cl --serve --port 8080 -g doudizhu
+ *
+ * 服务器自己不占座位，只是托管这个房间：谁连上 127.0.0.1:8080 就坐进来。
+ *   · 人满  → 回一句 full，客户端打印提示即可
+ *   · 人不够 → 等着（可以一直等），玩家随时能退出，也能敲一下用电脑补齐先开局
+ *   · 人够了 → 自动开局
+ *
+ * 想一口气开一片房间（公网场景）：--ports 10000-12000，每个端口一个房间。
+ */
+
 const WebSocket = require('ws');
 const gamesMod = require('../games');
 const rulesMod = require('../core/rules');
@@ -8,13 +21,10 @@ const runner = require('../runner');
 
 const sleep = runner.sleep;
 
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-function makeCode() {
-  let s = '';
-  for (let i = 0; i < 4; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-  return s;
-}
+/** 一局打完，留多久让大家看清结果再回大厅 */
+const RESULT_HOLD_MS = 4000;
+/** 人够了以后，等这么久再自动开局（给人一点反应时间） */
+const AUTO_START_DELAY_MS = 1200;
 
 function send(ws, obj) {
   if (ws && ws.readyState === 1) {
@@ -22,86 +32,92 @@ function send(ws, obj) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* 房间                                                                */
+/* ------------------------------------------------------------------ */
+
 class Room {
-  constructor(key, opts) {
-    this.code = makeCode();
-    this.gameKey = key;
-    this.rules = rulesMod.get(key);
+  constructor(gameKey, opts) {
+    opts = opts || {};
+    this.gameKey = gameKey;
+    this.rules = rulesMod.get(gameKey);
     this.seatCount = this.rules.seats;
-    this.members = [];        // 下标即座位号
-    this.spectators = [];
-    this.hostId = null;
-    this.public = !!(opts && opts.public);
-    this.started = false;
+    this.members = new Array(this.seatCount).fill(null); // 下标即座位号
+    this.started = false;   // 正在打
+    this.cooling = false;   // 刚打完，正在展示结果
     this.state = null;
     this.engine = null;
-    this.botDelay = (opts && opts.botDelay) || 800;
-    this.turnTimeout = (opts && opts.turnTimeout) || 90000;
-    this.autoStartTimer = null;
-    this.matchCountdown = (opts && opts.matchSeconds) || 12;
+    this.botDelay = opts.botDelay || 800;
+    this.turnTimeout = opts.turnTimeout || 90000;
+    this.startTimer = null;
   }
 
-  info() {
-    const self = this;
-    const players = [];
-    let filled = 0, total = 0;
-    for (let i = 0; i < this.seatCount; i++) {
-      const m = this.members[i];
-      if (m && !m.bot) filled++;
-      if (m) total++;
-      players.push(m ? { name: m.name, bot: !!m.bot } : null);
-    }
-    return {
-      code: this.code,
-      game: this.gameKey,
-      gameName: this.rules.name,
-      seats: this.seatCount,
-      filled: filled,
-      total: total,
-      started: this.started,
-      public: this.public,
-      hostSeat: this.members.findIndex(function (m) { return m && m.id === self.hostId; }),
-      players: players,
-    };
+  humans() {
+    let n = 0;
+    for (let i = 0; i < this.seatCount; i++) if (this.members[i] && !this.members[i].bot) n++;
+    return n;
+  }
+
+  occupied() {
+    let n = 0;
+    for (let i = 0; i < this.seatCount; i++) if (this.members[i]) n++;
+    return n;
   }
 
   freeSeat() {
     for (let i = 0; i < this.seatCount; i++) if (!this.members[i]) return i;
     return -1;
   }
+
+  info() {
+    const players = [];
+    for (let i = 0; i < this.seatCount; i++) {
+      const m = this.members[i];
+      players.push(m ? { name: m.name, bot: !!m.bot } : null);
+    }
+    return {
+      game: this.gameKey,
+      gameName: this.rules.name,
+      tagline: this.rules.tagline,
+      seats: this.seatCount,
+      humans: this.humans(),
+      occupied: this.occupied(),
+      started: this.started,
+      players: players,
+    };
+  }
 }
 
-function createServer(opts) {
-  opts = opts || {};
-  const port = opts.port || 8080;
-  const host = opts.host || '0.0.0.0';
-  const rooms = new Map();
-  const wss = new WebSocket.Server({ port: port, host: host });
+/* ------------------------------------------------------------------ */
+/* 单个端口的房间服务                                                   */
+/* ------------------------------------------------------------------ */
 
-  function log(s) { if (!opts.quiet) console.log('[dou-cl] ' + s); }
+function startRoomServer(port, gameKey, opts, hooks) {
+  const room = new Room(gameKey, opts);
+  const wss = new WebSocket.Server({ port: port, host: opts.host || '0.0.0.0' });
+  hooks.servers.push(wss);
 
-  function broadcastRoomInfo(room) {
-    const info = room.info();
-    room.members.forEach(function (m) { if (m) send(m.ws, { t: 'room', room: info, youName: m.name }); });
-    room.spectators.forEach(function (s) { send(s.ws, { t: 'room', room: info }); });
+  /* ---- 广播 ---- */
+
+  function broadcast(msg) {
+    room.members.forEach(function (m) { if (m) send(m.ws, msg); });
   }
 
-  function broadcastState(room) {
+  function broadcastLobby() {
+    broadcast({ t: 'lobby', room: room.info() });
+  }
+
+  function broadcastState() {
     if (!room.state || !room.engine) return;
     room.members.forEach(function (m, i) {
       if (!m) return;
-      send(m.ws, {
-        t: 'state',
-        view: room.engine.view(room.state, i),
-        room: room.info(),
-      });
-    });
-    room.spectators.forEach(function (s) {
-      send(s.ws, { t: 'state', view: room.engine.view(room.state, -1), room: room.info() });
+      send(m.ws, { t: 'state', view: room.engine.view(room.state, i), room: room.info() });
     });
   }
 
-  function makeDecider(room) {
+  /* ---- 谁该出牌 ---- */
+
+  function makeDecider() {
     return function (state, seat) {
       const m = room.members[seat];
       if (!m || m.bot || !m.ws || m.ws.readyState !== 1) {
@@ -115,14 +131,16 @@ function createServer(opts) {
           if (done) return;
           done = true;
           m.pending = null;
+          m.lastState = null;
           clearTimeout(m.timer);
           m.timer = null;
           resolve(action);
         };
         m.pending = finish;
+        m.lastState = state;
         m.timer = setTimeout(function () {
           if (m.pending === finish) {
-            send(m.ws, { t: 'notice', msg: '超时，已自动帮你出牌' });
+            send(m.ws, { t: 'notice', msg: '超时，已自动帮你出牌', en: 'timeout, auto-played for you' });
             finish(bot.chooseAction(room.engine, state, seat));
           }
         }, room.turnTimeout);
@@ -130,303 +148,254 @@ function createServer(opts) {
     };
   }
 
-  async function runRoom(room) {
-    room.started = true;
+  /* ---- 打一局 ---- */
+
+  async function playOneRound() {
     const engine = gamesMod.create(room.gameKey);
     room.engine = engine;
-    const players = [];
-    for (let i = 0; i < room.seatCount; i++) {
-      const m = room.members[i];
-      players.push({ name: m ? m.name : ('电脑' + (i + 1)), bot: m ? !!m.bot : true });
-    }
-    const decider = makeDecider(room);
+    const players = room.members.map(function (m, i) {
+      return { name: m ? m.name : ('电脑' + (i + 1)), bot: m ? !!m.bot : true };
+    });
+    const decider = makeDecider();
 
-    broadcastRoomInfo(room);
-    for (let round = 0; round < 200; round++) {
-      let state;
-      let tries = 0;
-      do {
-        state = await runner.runDeal(engine, players, decider,
-          function (st) { room.state = st; broadcastState(room); },
-          {});
-        tries++;
-      } while (state.result && state.result.type === 'redeal' && tries < 5);
+    let state;
+    let tries = 0;
+    do {
+      state = await runner.runDeal(engine, players, decider,
+        function (st) { room.state = st; broadcastState(); }, {});
+      tries++;
+    } while (state.result && state.result.type === 'redeal' && tries < 5);
 
-      room.state = state;
-      broadcastState(room);
+    room.state = state;
+    broadcastState();
+    return state;
+  }
 
-      // 等房主决定是否再来一局
-      const host = room.members.find(function (m) { return m && m.id === room.hostId && !m.bot; });
-      if (!host || host.ws.readyState !== 1) break;
-      const again = await new Promise(function (resolve) {
-        let done = false;
-        const finish = function (v) {
-          if (done) return;
-          done = true;
-          host.pendingAgain = null;
-          clearTimeout(host.timerAgain);
-          resolve(v);
-        };
-        host.pendingAgain = finish;
-        host.timerAgain = setTimeout(function () { finish(false); }, 120000);
-      });
-      if (!again) break;
+  async function runRoom() {
+    if (room.started || room.cooling) return;
+    room.started = true;
+    clearTimeout(room.startTimer);
+    room.startTimer = null;
+    try {
+      await playOneRound();
+    } catch (e) {
+      hooks.log('端口 ' + port + ' 的房间出错: ' + (e && e.message));
     }
     room.started = false;
     room.state = null;
-    broadcastRoomInfo(room);
-    room.members.forEach(function (m) { if (m && !m.bot) send(m.ws, { t: 'lobby', room: room.info() }); });
-    // 清掉机器人和已断线的人，从大厅重新开始
+    room.engine = null;
+
+    // 先把结果留在屏幕上，再回大厅
+    room.cooling = true;
+    setTimeout(function () {
+      room.cooling = false;
+      for (let i = 0; i < room.seatCount; i++) {
+        const m = room.members[i];
+        if (m && (m.bot || m.gone)) room.members[i] = null;
+      }
+      broadcastLobby();
+      maybeStart(2500);
+    }, RESULT_HOLD_MS);
+  }
+
+  function maybeStart(delay) {
+    if (room.started || room.cooling) return;
+    if (room.humans() <= 0 || room.humans() < room.seatCount) return;
+    clearTimeout(room.startTimer);
+    room.startTimer = setTimeout(function () {
+      room.startTimer = null;
+      if (room.started || room.cooling) return;
+      if (room.humans() <= 0 || room.humans() < room.seatCount) return;
+      runRoom();
+    }, delay || 0);
+  }
+
+  function seatOf(ws) {
     for (let i = 0; i < room.seatCount; i++) {
-      const m = room.members[i];
-      if (m && m.bot) room.members[i] = null;
+      if (room.members[i] && room.members[i].ws === ws) return i;
     }
-    if (!room.members.some(Boolean) && !room.spectators.length) rooms.delete(room.code);
+    return -1;
   }
 
-  function startRoom(room) {
-    if (room.started) return;
-    if (room.busy) return;
-    room.busy = true;
-    runRoom(room).catch(function (e) {
-      log('房间 ' + room.code + ' 出错: ' + (e && e.message));
-      room.started = false;
-      room.busy = false;
-      room.members.forEach(function (m) { if (m) send(m.ws, { t: 'error', msg: '对局异常: ' + (e && e.message) }); });
-    }).then(function () { room.busy = false; });
-  }
+  /* ---- 入座 / 离开 ---- */
 
-  function findOpenRoom(key) {
-    let best = null;
-    rooms.forEach(function (r) {
-      if (!r.public || r.started || r.gameKey !== key) return;
-      if (r.freeSeat() < 0) return;
-      if (!best) best = r;
-    });
-    return best;
-  }
-
-  function scheduleAutoStart(room) {
-    if (room.autoStartTimer) return;
-    let left = room.matchCountdown;
-    const tick = function () {
-      if (room.started) { room.autoStartTimer = null; return; }
-      const humans = room.members.filter(function (m) { return m && !m.bot; }).length;
-      if (humans >= room.seatCount) { room.autoStartTimer = null; startRoom(room); return; }
-      if (left <= 0) {
-        room.autoStartTimer = null;
-        startRoom(room);
-        return;
-      }
-      room.members.forEach(function (m) {
-        if (m && !m.bot) send(m.ws, { t: 'notice', msg: '匹配中… ' + left + ' 秒后开始（不足的座位由电脑补上）' });
+  function onJoin(ws, name) {
+    if (ws.seat !== undefined && ws.seat >= 0 && room.members[ws.seat] && room.members[ws.seat].ws === ws) {
+      return send(ws, { t: 'seated', seat: ws.seat, room: room.info() });
+    }
+    if (room.started || room.cooling) {
+      return send(ws, {
+        t: 'full',
+        msg: '房间正在游戏中（' + room.seatCount + '/' + room.seatCount + ' 人），稍后再试',
+        en: 'game in progress, try again later',
       });
-      room.spectators.forEach(function (s) {
-        send(s.ws, { t: 'notice', msg: '匹配中… ' + left + ' 秒后开始' });
-      });
-      left -= 3;
-      room.autoStartTimer = setTimeout(tick, 3000);
-    };
-    room.autoStartTimer = setTimeout(tick, 3000);
+    }
+    const seat = room.freeSeat();
+    if (seat < 0) {
+      return send(ws, { t: 'full', msg: '房间已满（' + room.seatCount + '/' + room.seatCount + ' 人）', en: 'room full' });
+    }
+    const clean = String(name || '').trim().slice(0, 12) || ('玩家' + (seat + 1));
+    room.members[seat] = { name: clean, bot: false, ws: ws, pending: null, gone: false };
+    ws.seat = seat;
+    send(ws, { t: 'seated', seat: seat, room: room.info() });
+    hooks.log(clean + ' 进入房间（端口 ' + port + '，座位 ' + seat + '）');
+    broadcastLobby();
+    maybeStart(AUTO_START_DELAY_MS);
   }
 
-  function leaveRoom(ws) {
-    rooms.forEach(function (room, code) {
-      const idx = room.members.findIndex(function (m) { return m && m.ws === ws; });
-      if (idx >= 0) {
-        const m = room.members[idx];
-        if (room.started) {
-          // 游戏中断线 → 交给电脑托管
-          m.bot = true;
-          m.name = m.name + '(托管)';
-          m.pending = null;
-          m.pendingAgain = null;
-          broadcastRoomInfo(room);
-        } else {
-          room.members[idx] = null;
-          if (!room.members.some(Boolean) && !room.spectators.length) {
-            clearTimeout(room.autoStartTimer);
-            rooms.delete(code);
-          } else {
-            if (room.hostId === m.id) {
-              const nx = room.members.find(function (x) { return x && !x.bot; });
-              room.hostId = nx ? nx.id : null;
-            }
-            broadcastRoomInfo(room);
-          }
-        }
-      }
-      const si = room.spectators.findIndex(function (s) { return s.ws === ws; });
-      if (si >= 0) {
-        room.spectators.splice(si, 1);
-        broadcastRoomInfo(room);
-      }
-    });
+  function onStart(ws) {
+    const seat = seatOf(ws);
+    if (seat < 0) return send(ws, { t: 'error', msg: '你还没有入座', en: 'not seated' });
+    if (room.started || room.cooling) return;
+    const who = room.members[seat].name;
+    broadcast({ t: 'notice', msg: who + ' 发起开局，不足的位置由电脑补上', en: 'start called, bots fill the empty seats' });
+    runRoom();
   }
+
+  function onLeave(ws) {
+    const seat = seatOf(ws);
+    if (seat < 0) return;
+    const m = room.members[seat];
+
+    if (room.started) {
+      // 打牌中途走了 → 电脑接管这个座位，牌局继续
+      if (m.pending) {
+        const finish = m.pending;
+        m.pending = null;
+        clearTimeout(m.timer);
+        m.timer = null;
+        finish(bot.chooseAction(room.engine, m.lastState, seat));
+      }
+      m.bot = true;
+      m.gone = true;
+      m.ws = null;
+      m.name = m.name + '(托管)';
+      broadcast({ t: 'notice', msg: m.name + ' 断线，由电脑托管', en: 'a player left, autopilot on' });
+      hooks.log(m.name + ' 断线（端口 ' + port + '），由电脑托管');
+      return;
+    }
+
+    clearTimeout(room.startTimer);
+    room.startTimer = null;
+    room.members[seat] = null;
+    ws.seat = -1;
+    hooks.log((m && m.name ? m.name : '玩家') + ' 离开房间（端口 ' + port + '）');
+    broadcastLobby();
+    broadcast({ t: 'notice', msg: (m && m.name ? m.name : '玩家') + ' 离开了房间', en: 'a player left the room' });
+  }
+
+  /* ---- 连接 ---- */
 
   wss.on('connection', function (ws) {
-    ws.id = Math.random().toString(36).slice(2, 10);
     ws.isAlive = true;
+    ws.seat = -1;
     ws.on('pong', function () { ws.isAlive = true; });
 
-    send(ws, { t: 'hello', id: ws.id, games: gamesMod.keys.map(function (k) { return { key: k, name: rulesMod.get(k).name, tagline: rulesMod.get(k).tagline, seats: rulesMod.get(k).seats }; }) });
+    send(ws, {
+      t: 'hello',
+      port: port,
+      game: room.gameKey,
+      gameName: room.rules.name,
+      tagline: room.rules.tagline,
+      seats: room.seatCount,
+    });
 
     ws.on('message', function (raw) {
       let m;
-      try { m = JSON.parse(String(raw)); } catch (e) { return send(ws, { t: 'error', msg: '消息格式错误' }); }
+      try { m = JSON.parse(String(raw)); }
+      catch (e) { return send(ws, { t: 'error', msg: '消息格式错误', en: 'bad message' }); }
 
-      if (m.t === 'list') {
-        const list = [];
-        rooms.forEach(function (r) {
-          if (r.started) return;
-          if (r.freeSeat() < 0) return;
-          list.push(r.info());
-        });
-        return send(ws, { t: 'rooms', rooms: list });
-      }
+      if (m.t === 'join') return onJoin(ws, m.name);
+      if (m.t === 'start') return onStart(ws);
+      if (m.t === 'leave') return onLeave(ws);
 
-      if (m.t === 'create') {
-        if (!rulesMod.get(m.game)) return send(ws, { t: 'error', msg: '未知玩法' });
-        const room = new Room(m.game, {
-          public: !!m.public,
-          matchSeconds: opts.matchSeconds,
-          botDelay: opts.botDelay,
-          turnTimeout: opts.turnTimeout,
-        });
-        while (rooms.has(room.code)) room.code = makeCode();
-        rooms.set(room.code, room);
-        const seat = 0;
-        room.members[seat] = { id: ws.id, ws: ws, name: m.name || '房主', bot: false, pending: null };
-        room.hostId = ws.id;
-        ws.roomCode = room.code;
-        send(ws, { t: 'joined', code: room.code, seat: seat, host: true, room: room.info() });
-        log('创建房间 ' + room.code + '（' + room.rules.name + '）by ' + (m.name || '房主'));
-        broadcastRoomInfo(room);
-        if (room.public) scheduleAutoStart(room);
-        return;
-      }
-
-      if (m.t === 'join') {
-        const code = String(m.code || '').toUpperCase();
-        const room = rooms.get(code);
-        if (!room) return send(ws, { t: 'error', msg: '房间 ' + code + ' 不存在' });
-        const seat = room.freeSeat();
-        if (seat < 0 && !room.started) return send(ws, { t: 'error', msg: '房间已满' });
-        if (room.started) {
-          room.spectators.push({ id: ws.id, ws: ws, name: m.name || '观众' });
-          ws.roomCode = room.code;
-          send(ws, { t: 'joined', code: room.code, seat: -1, spectator: true, room: room.info() });
-          broadcastState(room);
-          return;
-        }
-        room.members[seat] = { id: ws.id, ws: ws, name: m.name || ('玩家' + (seat + 1)), bot: false, pending: null };
-        ws.roomCode = room.code;
-        send(ws, { t: 'joined', code: room.code, seat: seat, host: room.hostId === ws.id, room: room.info() });
-        log((m.name || '玩家') + ' 加入房间 ' + room.code + '（座位 ' + seat + '）');
-        broadcastRoomInfo(room);
-        if (room.public) scheduleAutoStart(room);
-        return;
-      }
-
-      if (m.t === 'match') {
-        const key = m.game;
-        if (!rulesMod.get(key)) return send(ws, { t: 'error', msg: '未知玩法' });
-        let room = findOpenRoom(key);
-        if (!room) {
-          room = new Room(key, {
-            public: true,
-            matchSeconds: opts.matchSeconds,
-            botDelay: opts.botDelay,
-            turnTimeout: opts.turnTimeout,
-          });
-          while (rooms.has(room.code)) room.code = makeCode();
-          rooms.set(room.code, room);
-          const seat0 = 0;
-          room.members[seat0] = { id: ws.id, ws: ws, name: m.name || '玩家1', bot: false, pending: null };
-          room.hostId = ws.id;
-          ws.roomCode = room.code;
-          send(ws, { t: 'joined', code: room.code, seat: seat0, host: true, room: room.info() });
-          log('匹配新建房间 ' + room.code + '（' + room.rules.name + '）');
-        } else {
-          const seat = room.freeSeat();
-          room.members[seat] = { id: ws.id, ws: ws, name: m.name || ('玩家' + (seat + 1)), bot: false, pending: null };
-          ws.roomCode = room.code;
-          send(ws, { t: 'joined', code: room.code, seat: seat, host: false, room: room.info() });
-          log((m.name || '玩家') + ' 匹配进房间 ' + room.code);
-        }
-        broadcastRoomInfo(room);
-        scheduleAutoStart(room);
-        return;
-      }
-
-      const room = rooms.get(ws.roomCode);
-      if (!room) return send(ws, { t: 'error', msg: '你还没有加入房间' });
-      const mySeat = room.members.findIndex(function (x) { return x && x.ws === ws; });
-
-      if (m.t === 'start') {
-        if (ws.id !== room.hostId) return send(ws, { t: 'error', msg: '只有房主可以开始' });
-        if (room.started) return;
-        if (!room.members.some(Boolean)) return send(ws, { t: 'error', msg: '房间里没人' });
-        return startRoom(room);
-      }
-
-      if (m.t === 'again') {
-        const mm = room.members.find(function (x) { return x && x.id === ws.id; });
-        if (mm && mm.pendingAgain) mm.pendingAgain(m.yes !== false);
-        return;
-      }
+      const seat = seatOf(ws);
+      if (seat < 0) return send(ws, { t: 'error', msg: '你还没有入座', en: 'not seated' });
 
       if (m.t === 'act') {
-        if (mySeat < 0) return;
-        const mm = room.members[mySeat];
-        if (!mm || !mm.pending) return send(ws, { t: 'error', msg: '现在不该你操作' });
-        const p = mm.pending;
+        const mm = room.members[seat];
+        if (!mm || !mm.pending) return send(ws, { t: 'error', msg: '现在不该你操作', en: 'not your turn' });
+        const finish = mm.pending;
         mm.pending = null;
-        return p(m.action);
+        return finish(m.action);
       }
 
       if (m.t === 'chat') {
-        const who = mySeat >= 0 && room.members[mySeat] ? room.members[mySeat].name : '观众';
-        room.members.forEach(function (x) { if (x) send(x.ws, { t: 'chat', who: who, msg: String(m.msg).slice(0, 200) }); });
-        room.spectators.forEach(function (s) { send(s.ws, { t: 'chat', who: who, msg: String(m.msg).slice(0, 200) }); });
+        const who = (room.members[seat] && room.members[seat].name) || '玩家';
+        broadcast({ t: 'chat', who: who, msg: String(m.msg).slice(0, 200) });
         return;
       }
-
-      if (m.t === 'leave') {
-        ws.roomCode = null;
-        return leaveRoom(ws);
-      }
     });
 
-    ws.on('close', function () {
-      leaveRoom(ws);
-    });
+    ws.on('close', function () { onLeave(ws); });
+    ws.on('error', function () { /* ignore，交给 close */ });
   });
 
-  const heartbeat = setInterval(function () {
-    wss.clients.forEach(function (ws) {
-      if (ws.isAlive === false) return ws.terminate();
-      ws.isAlive = false;
-      try { ws.ping(); } catch (e) { /* ignore */ }
-    });
-  }, 30000);
-  wss.on('close', function () { clearInterval(heartbeat); });
-
-  wss.on('listening', function () {
-    const addr = wss.address();
-    log('斗地主服务器已启动  端口 ' + addr.port);
-    log('局域网内的玩家用： npx dou-cl --join <本机IP>:' + addr.port);
-  });
   wss.on('error', function (e) {
-    log('服务器错误: ' + e.message);
+    hooks.log('端口 ' + port + ' 启动失败: ' + e.message);
   });
 
   return {
-    wss: wss,
     port: port,
-    rooms: rooms,
-    close: function () { clearInterval(heartbeat); wss.close(); },
+    room: room,
+    wss: wss,
+    close: function () { try { wss.close(); } catch (e) { /* ignore */ } },
   };
 }
 
-module.exports = { createServer: createServer };
+/* ------------------------------------------------------------------ */
+/* 对外                                                                */
+/* ------------------------------------------------------------------ */
+
+function createServers(opts) {
+  opts = opts || {};
+  const ports = (opts.ports && opts.ports.length) ? opts.ports.slice()
+    : [opts.port || 8080];
+  const gameKey = opts.game || 'doudizhu';
+  if (!rulesMod.get(gameKey)) throw new Error('未知玩法：' + gameKey);
+
+  const log = opts.quiet ? function () {} : function (s) { console.log('[dou-cl] ' + s); };
+  const hooks = { servers: [], log: log };
+
+  const list = [];
+  for (let i = 0; i < ports.length; i++) {
+    list.push(startRoomServer(ports[i], gameKey, opts, hooks));
+  }
+
+  // 所有房间共用一条心跳
+  const heartbeat = setInterval(function () {
+    hooks.servers.forEach(function (wss) {
+      wss.clients.forEach(function (ws) {
+        if (ws.isAlive === false) return ws.terminate();
+        ws.isAlive = false;
+        try { ws.ping(); } catch (e) { /* ignore */ }
+      });
+    });
+  }, 30000);
+
+  const rules = rulesMod.get(gameKey);
+  if (ports.length === 1) {
+    log(rules.name + ' 房间已开  端口 ' + ports[0]);
+    log('别人连进来： npx dou-cl --join <本机IP>:' + ports[0]);
+  } else {
+    log(rules.name + ' 房间 × ' + ports.length + '  端口 ' + ports[0] + '-' + ports[ports.length - 1]);
+    log('别人连进来： npx dou-cl --join <本机IP>:<端口>（每个端口一个独立房间）');
+  }
+
+  return {
+    ports: ports,
+    game: gameKey,
+    rules: rules,
+    servers: list,
+    close: function () {
+      clearInterval(heartbeat);
+      list.forEach(function (s) { s.close(); });
+    },
+  };
+}
+
+module.exports = {
+  createServers: createServers,
+  createServer: createServers,   // 兼容旧调用：opts.port 走单端口
+  Room: Room,
+};

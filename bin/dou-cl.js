@@ -3,7 +3,7 @@
 
 /*
  * dou-cl —— 命令行斗地主 / 跑得快 / 510K
- * 单机可玩，也支持联网（自建服务器 / 局域网 / 快速匹配）
+ * 单机可玩；联网时「一个 ip:port 就是一个房间」。
  */
 
 const path = require('path');
@@ -27,12 +27,12 @@ function usage() {
   console.log('    npx dou-cl -g paodekuai           跑得快');
   console.log('    npx dou-cl -g fivek               510K');
   console.log('');
-  console.log(colors.bold('  联网'));
-  console.log('    npx dou-cl --serve                在本机 8080 端口开服务器');
-  console.log('    npx dou-cl --serve --port 9000    指定端口');
-  console.log('    npx dou-cl --create doudizhu      连服务器并开一个房间');
-  console.log('    npx dou-cl --join 1.2.3.4:8080 --code ABCD');
-  console.log('    npx dou-cl --match doudizhu --server 1.2.3.4:8080   快速匹配');
+  console.log(colors.bold('  联网') + colors.dim('（一个 ip:port 就是一个房间）'));
+  console.log('    npx dou-cl --serve --port 8080              在 8080 开一个房间（默认斗地主）');
+  console.log('    npx dou-cl --serve --port 8080 -g fivek     指定房间玩法');
+  console.log('    npx dou-cl --serve --ports 10000-12000      一次开一片房间，每个端口一个');
+  console.log('    npx dou-cl --join 192.168.1.10:8080         连进这个房间');
+  console.log(colors.dim('      服务器自己不占座位；人满了直接回绝，人不够就等着（s 让电脑补齐，q 退出）'));
   console.log('');
   console.log(colors.bold('  摸鱼模式') + colors.dim('（默认开启，牌桌伪装成看起来正常的开发输出）'));
   console.log('    npx dou-cl --skin hex             换皮肤： log(默认) / hex / json / diff');
@@ -42,6 +42,7 @@ function usage() {
   console.log('');
   console.log(colors.bold('  其他'));
   console.log('    --name <昵称>    联网时显示的名字');
+  console.log('    --host <地址>    服务器监听地址（默认 0.0.0.0）');
   console.log('    --speed <毫秒>   单机电脑出牌间隔（默认 700）');
   console.log('    --ascii          花色用 S/H/C/D 字母显示（老终端兼容）');
   console.log('    -h, --help       显示帮助');
@@ -59,14 +60,36 @@ function usage() {
   console.log('');
 }
 
+/** "8080" / "8080,8081" / "10000-12000" → [8080] / [8080,8081] / [10000..12000] */
+function parsePorts(s) {
+  const out = [];
+  String(s || '').split(',').forEach(function (part) {
+    const p = part.trim();
+    if (!p) return;
+    const mm = /^(\d+)\s*-\s*(\d+)$/.exec(p);
+    if (mm) {
+      const a = Number(mm[1]);
+      const b = Number(mm[2]);
+      for (let i = Math.min(a, b); i <= Math.max(a, b); i++) {
+        if (i > 0 && i < 65536) out.push(i);
+      }
+    } else {
+      const n = Number(p);
+      if (n > 0 && n < 65536) out.push(n);
+    }
+  });
+  return out;
+}
+
 function parseArgs(argv) {
   const o = {
     mode: 'menu',
     game: null,
     server: process.env.DOUCL_SERVER || '127.0.0.1:8080',
-    code: null,
     name: process.env.DOUCL_NAME || null,
     port: Number(process.env.DOUCL_PORT) || 8080,
+    ports: null,
+    host: process.env.DOUCL_HOST || null,
     speed: 700,
     ascii: false,
     skin: process.env.DOUCL_SKIN || require('../src/skins').DEFAULT_SKIN,
@@ -85,14 +108,13 @@ function parseArgs(argv) {
       case '-v': case '--version': o.version = true; break;
       case '--serve': case '--server-mode': o.mode = 'serve'; break;
       case '--join': o.mode = 'join'; o.server = next(); break;
-      case '--match': o.mode = 'match'; o.game = next(); break;
-      case '--create': o.mode = 'create'; o.game = next(); break;
+      case '--server': o.mode = 'join'; o.server = next(); break;
       case '--local': o.mode = 'local'; o.game = next(); break;
-      case '-g': case '--game': o.mode = 'local'; o.game = next(); break;
-      case '--server': o.server = next(); break;
-      case '--code': o.code = (next() || '').toUpperCase(); break;
-      case '--name': o.name = next(); break;
+      case '-g': case '--game': o.mode = o.mode === 'serve' ? 'serve' : 'local'; o.game = next(); break;
+      case '--ports': case '--port-range': o.ports = parsePorts(next()); break;
       case '--port': o.port = Number(next()) || 8080; break;
+      case '--host': o.host = next(); break;
+      case '--name': o.name = next(); break;
       case '--speed': o.speed = Number(next()) || 700; break;
       case '--ascii': o.ascii = true; break;
       case '--no-color': process.env.NO_COLOR = '1'; break;
@@ -118,6 +140,13 @@ function parseArgs(argv) {
       case '-s':
         o.skin = 'log';
         break;
+      // 旧协议里的房间号 / 匹配 / 开房已经取消：地址本身就是房间
+      case '--code': case '--match': case '--create': {
+        console.error(colors.yellow('提示：' + a + ' 已经不需要了 —— 现在一个地址就是一个房间。'));
+        console.error(colors.dim('      直接： npx dou-cl --serve --port 8080  然后别人 npx dou-cl --join <IP>:8080'));
+        if ((a === '--match' || a === '--create') && args[i + 1] && args[i + 1][0] !== '-') i++;
+        break;
+      }
       default:
         if (a && a[0] !== '-') {
           if (a === 'exercise' || a === 'drill') { o.mode = 'exercise'; o.exercise = 'menu'; }
@@ -168,32 +197,23 @@ async function main() {
 
   if (opts.mode === 'serve') {
     const server = require('../src/net/server');
-    const s = server.createServer({ port: opts.port });
-    console.log(colors.bold('  dou-cl 服务器运行中') + colors.dim('  端口 ' + opts.port));
+    const game = opts.game || 'doudizhu';
+    const ports = (opts.ports && opts.ports.length) ? opts.ports : [opts.port];
+    const s = server.createServers({ game: game, ports: ports, host: opts.host || '0.0.0.0' });
+    console.log(colors.dim('  服务端不占座位 —— 玩家执行  npx dou-cl --join <本机IP>:<端口>  进来'));
     console.log(colors.dim('  Ctrl+C 停止'));
+    void s;
     return;
   }
 
-  if (opts.mode === 'create' || opts.mode === 'join' || opts.mode === 'match') {
+  if (opts.mode === 'join') {
     const client = require('../src/net/client');
     const io = new ui.IO();
-    if (opts.mode === 'join' && !opts.code) {
-      const code = await app.ask(io, ' 房间号（4 位）> ');
-      opts.code = code.toUpperCase();
-    }
-    if (opts.mode === 'create' && !opts.game) opts.game = 'doudizhu';
-    if (opts.mode === 'match' && !opts.game) opts.game = 'doudizhu';
     if (!opts.name) {
       const n = await app.ask(io, ' 你的昵称 > ');
       opts.name = n || '玩家';
     }
-    await client.runClient(io, {
-      mode: opts.mode,
-      game: opts.game,
-      code: opts.code,
-      name: opts.name,
-      server: opts.server,
-    }, opts);
+    await client.runClient(io, { server: opts.server, name: opts.name }, opts);
     return;
   }
 

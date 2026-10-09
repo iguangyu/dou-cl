@@ -110,9 +110,10 @@ async function main() {
   ok(menuText.indexOf('摸鱼') < 0, '菜单里已经没有“摸鱼模式”这一项');
   ok(menuText.indexOf('斗地主') >= 0 && menuText.indexOf('跑得快') >= 0 && menuText.indexOf('510K') >= 0,
     '菜单只让选玩法（斗地主 / 跑得快 / 510K）');
-  ok(menuText.indexOf('创建房间') >= 0 && menuText.indexOf('加入房间') >= 0 &&
-    menuText.indexOf('快速匹配') >= 0 && menuText.indexOf('服务器') >= 0,
-    '菜单只让选联机方式（创建 / 加入 / 匹配 / 开服务器）');
+  ok(menuText.indexOf('加入房间') >= 0 && menuText.indexOf('开一个房间') >= 0,
+    '菜单只让选联机方式（加入房间 / 开一个房间）');
+  ok(menuText.indexOf('快速匹配') < 0 && menuText.indexOf('创建房间') < 0,
+    '菜单里不再有“创建房间 / 快速匹配”这些旧模式的选项');
 
   console.log('\n[local] 本地对局视角');
   await run('doudizhu');

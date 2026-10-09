@@ -190,7 +190,7 @@ function parseCardInput(input, hand) {
     else if (ch === 'w' || ch === 'x') { rank = 16; i++; }
     else if (ch === 'W' || ch === 'X') { rank = 17; i++; }
     else {
-      return { ok: false, err: '看不懂的字符 "' + ch + '"（牌面用 3-9 0 J Q K A 2 w W 表示）' };
+      return { ok: false, err: '看不懂的字符 "' + ch + '"（牌面用 3-9 0 J Q K A 2 w W 表示）', en: 'unknown char "' + ch + '"' };
     }
     let suit = -1;
     if (i < s.length && SUIT_ALIAS[s[i]] !== undefined) {
@@ -199,7 +199,7 @@ function parseCardInput(input, hand) {
     }
     tokens.push({ rank: rank, suit: suit });
   }
-  if (!tokens.length) return { ok: false, err: '没有输入任何牌' };
+  if (!tokens.length) return { ok: false, err: '没有输入任何牌', en: 'no cards entered' };
 
   const used = new Set();
   const picked = [];
@@ -258,7 +258,7 @@ function parseCardInput(input, hand) {
       const c = take(t.rank, t.suit);
       if (!c) {
         const label = C.rankChar(t.rank) + (t.suit >= 0 ? C.SUIT_CHARS[t.suit] : '');
-        return { ok: false, err: '手里没有 ' + label + ' 这张牌' };
+        return { ok: false, err: '手里没有 ' + label + ' 这张牌', en: 'not in hand: ' + C.rankChar(t.rank) };
       }
       picked.push(c);
     }

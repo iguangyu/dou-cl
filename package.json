@@ -1,7 +1,7 @@
 {
   "name": "dou-cl",
-  "version": "1.0.1",
-  "description": "伪装成开发控制台的命令行牌桌 —— 斗地主 / 跑得快 / 510K，牌局藏在终端里",
+  "version": "1.1.0",
+  "description": "伪装成开发控制台的命令行牌桌 —— 斗地主 / 跑得快 / 510K，牌局藏在日志流、xxd、JSON 或 git diff 里；支持局域网联机，也有公共房间可直接和真人开局",
   "keywords": [
     "doudizhu",
     "斗地主",
@@ -12,7 +12,9 @@
     "card-game",
     "terminal",
     "tui",
-    "stealth"
+    "stealth",
+    "multiplayer",
+    "lan"
   ],
   "license": "MIT",
   "author": "iguangyu",

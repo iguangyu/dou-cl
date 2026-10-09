@@ -127,7 +127,7 @@ function askHuman(io, engine, state, seat, key) {
           if (skin) printStealthHelp(); else printHelp(key);
           return step();
         }
-        if (low === 'skins' || low === 'skin' ) { printSkinHelp(); return step(); }
+        if (low === 'skins' || low === 'skin') { printSkinHelp(); return step(); }
         if (low === 'quit' || low === 'exit') {
           if (!skin) io.say(colors.dim('已退出本局。'));
           io.close();
@@ -258,11 +258,8 @@ function showMenu(io, opts) {
     io.say('    ' + colors.bold(m[0]) + '  ' + m[2] + '  ' + colors.dim(m[3]));
   });
   io.say('');
-  io.say('   ' + colors.bold('联机'));
-  io.say('    ' + colors.bold('4') + '  创建房间        ' +
-    colors.bold('5') + '  加入房间');
-  io.say('    ' + colors.bold('6') + '  快速匹配        ' +
-    colors.bold('7') + '  本机开服务器');
+  io.say('   ' + colors.bold('联机') + colors.dim('（一个 ip:port 就是一个房间）'));
+  io.say('    ' + colors.bold('4') + '  加入房间          ' + colors.bold('5') + '  开一个房间');
   io.say('');
   io.say('    ' + colors.bold('0') + '  退出');
   io.say('  ' + '\u2500'.repeat(58));
@@ -277,14 +274,14 @@ function showMenu(io, opts) {
         .catch(function (e) { io.say(colors.red('出错: ' + e.message)); showMenu(io, opts); });
       return;
     }
-    if (c === '4' || c === '5' || c === '6') {
-      onlineFlow(io, String(Number(c) - 3), opts).catch(function (e) {
+    if (c === '4') {
+      joinFlow(io, opts).catch(function (e) {
         io.say(colors.red('出错: ' + e.message));
         showMenu(io, opts);
       });
       return;
     }
-    if (c === '7') { startServerFlow(io, opts.port); return; }
+    if (c === '5') { startServerFlow(io, opts); return; }
     io.say(colors.red('没有这个选项：' + c));
     setTimeout(function () { showMenu(io, opts); }, 600);
   });
@@ -296,50 +293,40 @@ function ask(io, prompt) {
   });
 }
 
-async function onlineFlow(io, choice, opts) {
+/** 联机 · 加入房间：问昵称 + 地址，地址本身就是房间 */
+async function joinFlow(io, opts) {
   io.clear();
   io.say('');
-  const name = await ask(io, ' 你的昵称 > ') || '玩家';
-
-  if (choice === '1') {
-    io.say('');
-    io.say(' 选择玩法： 1 斗地主   2 跑得快   3 510K');
-    const g = await ask(io, ' > ');
-    const key = ({ '1': 'doudizhu', '2': 'paodekuai', '3': 'fivek' })[g.trim()] || 'doudizhu';
-    const srv = await ask(io, ' 服务器地址（直接回车 = 本机 ' + opts.server + '） > ') || opts.server;
-    io.close();
-    const client = require('./net/client');
-    await client.runClient(new ui.IO(), { mode: 'create', game: key, name: name, server: srv }, opts);
-    return;
-  }
-
-  if (choice === '2') {
-    const code = await ask(io, ' 房间号（4 位） > ');
-    const srv = await ask(io, ' 服务器地址（直接回车 = 本机 ' + opts.server + '） > ') || opts.server;
-    io.close();
-    const client = require('./net/client');
-    await client.runClient(new ui.IO(), { mode: 'join', code: code.toUpperCase(), name: name, server: srv }, opts);
-    return;
-  }
-
+  io.say(' ' + colors.bold('加入房间') + colors.dim('   填对方的 ip:port 就行'));
   io.say('');
-  io.say(' 选择玩法： 1 斗地主   2 跑得快   3 510K');
-  const g = await ask(io, ' > ');
-  const key = ({ '1': 'doudizhu', '2': 'paodekuai', '3': 'fivek' })[g.trim()] || 'doudizhu';
-  const srv = await ask(io, ' 服务器地址（直接回车 = 本机 ' + opts.server + '） > ') || opts.server;
+  const name = (await ask(io, ' 你的昵称 > ')) || '玩家';
+  const srv = (await ask(io, ' 房间地址 ip:port（回车 = ' + opts.server + '） > ')) || opts.server;
   io.close();
   const client = require('./net/client');
-  await client.runClient(new ui.IO(), { mode: 'match', game: key, name: name, server: srv }, opts);
+  await client.runClient(new ui.IO(), { server: srv, name: name }, opts);
 }
 
-function startServerFlow(io, port) {
+/** 联机 · 本机开一个房间（服务器自己不占座位，别人用 --join 连进来） */
+async function startServerFlow(io, opts) {
   io.clear();
   io.say('');
-  io.say('  启动服务器…（Ctrl+C 停止）');
+  io.say(' ' + colors.bold('开一个房间') + colors.dim('   本机起一个房间，别人连进来'));
+  io.say('');
+  io.say(' 玩法： ' + colors.bold('1') + ' 斗地主   ' + colors.bold('2') + ' 跑得快   ' + colors.bold('3') + ' 510K');
+  const g = await ask(io, ' > ');
+  const key = ({ '1': 'doudizhu', '2': 'paodekuai', '3': 'fivek' })[g.trim()] || 'doudizhu';
+  const p = await ask(io, ' 端口（回车 = ' + opts.port + '） > ');
+  const port = Number(p) || opts.port;
+
+  const rules = rulesMod.get(key);
   const server = require('./net/server');
-  server.createServer({ port: port || 8080 });
-  io.say(colors.dim('  本机 IP 可以用 ipconfig 查，别人执行： npx dou-cl --join <你的IP>:' + (port || 8080)));
-  io.say(colors.dim('  也可以让别人快速匹配： npx dou-cl --match doudizhu --server <你的IP>:' + (port || 8080)));
+  server.createServers({ game: key, ports: [port] });
+
+  io.say('');
+  io.say(colors.dim(' 房间玩法：' + rules.name + '   端口：' + port));
+  io.say(colors.dim(' 把地址发给朋友： npx dou-cl --join <你的IP>:' + port));
+  io.say(colors.dim(' 本机 IP 用 ipconfig 查；服务端自己不占座位。'));
+  io.say(colors.dim(' Ctrl+C 停止。'));
   io.handler = null;
 }
 

@@ -155,7 +155,7 @@ const stealthSections = [
 
 const menuText = [
   '',
-  '  dou-cl   v1.0.0',
+  '  dou-cl   v1.0.1',
   '',
   '  ' + '\u2500'.repeat(58),
   '   单机',
@@ -163,9 +163,8 @@ const menuText = [
   '    2  跑得快  3 人 \u00b7 一副牌去掉大小王',
   '    3  510K  4 人 \u00b7 两副牌 \u00b7 5/10/K 计分',
   '',
-  '   联机',
-  '    4  创建房间        5  加入房间',
-  '    6  快速匹配        7  本机开服务器',
+  '   联机（一个 ip:port 就是一个房间）',
+  '    4  加入房间         5  开一个房间',
   '',
   '    0  退出',
   '  ' + '\u2500'.repeat(58),
@@ -176,16 +175,15 @@ const menuText = [
 
 const netText = [
   '',
-  '  房间 ABCD   斗地主 \u00b7 3 人',
-  '  ' + '\u2500'.repeat(50),
-  '   1号位  你',
-  '   2号位  空',
-  '   3号位  空',
-  '  ' + '\u2500'.repeat(50),
-  '   把房间号发给朋友，或让他们执行：',
-  '   npx dou-cl --join 192.168.1.10:8080 --code ABCD',
+  '  房间 192.168.1.10:8080   斗地主 \u00b7 3 人',
+  '  ' + '\u2500'.repeat(52),
+  '   1 号位   你',
+  '   2 号位   空 \u00b7 等待加入',
+  '   3 号位   空 \u00b7 等待加入',
+  '  ' + '\u2500'.repeat(52),
+  '   等待玩家 1/3    朋友加入： npx dou-cl --join 192.168.1.10:8080',
   '',
-  '  按 Enter 开始游戏（不足的位置由电脑补上）> _',
+  '[s] 用电脑补齐先开局   [q] 退出 > _',
 ].join('\n');
 
 const play = playSections.map(function (sec) {
@@ -259,7 +257,7 @@ ${stealth.map(function (b) {
 }).join('\n')}
 
   <div class="sep"></div>
-  <h2>联网房间 <span class="cmd">npx dou-cl --create doudizhu</span></h2>
+  <h2>联网房间 <span class="cmd">npx dou-cl --serve --port 8080</span></h2>
   <div class="term"><pre>${monoToHtml(netText)}</pre></div>
 
   <h2>牌面表示</h2>
@@ -279,7 +277,7 @@ ${stealth.map(function (b) {
     <div class="card"><h3>出牌</h3><p>直接敲点数：<span class="key">34567</span> 或 <span class="key">3 4 5 6 7</span>；指定花色 <span class="key">5s 5h</span>。要五十K / 同花顺直接敲 <span class="key">50K</span> / <span class="key">56789</span>，程序自动挑同花色那组。</p></div>
     <div class="card"><h3>命令</h3><p><span class="key">p</span> 不要 &nbsp; <span class="key">h</span> 提示 &nbsp; <span class="key">?</span> 帮助 &nbsp; <span class="key">quit</span> 退出</p></div>
     <div class="card"><h3>伪装相关</h3><p><span class="key">reveal</span> 看真身 &nbsp; <span class="key">redraw</span> 重画 &nbsp; <span class="key">skin log|hex|json|diff</span> 换皮肤</p></div>
-    <div class="card"><h3>联网</h3><p>房主 <span class="key">--serve</span>，其他人 <span class="key">--join 地址 --code 房间号</span>，或 <span class="key">--match 玩法</span>。人数不够由电脑补齐。</p></div>
+    <div class="card"><h3>联网</h3><p>一个 <span class="key">ip:port</span> 就是一个房间：本机 <span class="key">--serve --port 8080</span>，别人 <span class="key">--join 地址:端口</span>。人满回绝，人不够就等 —— <span class="key">s</span> 让电脑补齐先开局，<span class="key">q</span> 退出。</p></div>
   </div>
 
   <div class="sep"></div>

@@ -48,7 +48,7 @@
   <h2>菜单 <span class="cmd">npx dou-cl</span></h2>
   <p class="hint">菜单上只有「玩法」和「是否联机」两件事。想连菜单都不出现，直接 <span class="key">npx dou-cl -g doudizhu</span>。</p>
   <div class="term"><pre>
-  dou-cl   v1.0.0
+  dou-cl   v1.0.1
 
   ──────────────────────────────────────────────────────────
    单机
@@ -56,9 +56,8 @@
     2  跑得快  3 人 · 一副牌去掉大小王
     3  510K  4 人 · 两副牌 · 5/10/K 计分
 
-   联机
-    4  创建房间        5  加入房间
-    6  快速匹配        7  本机开服务器
+   联机（一个 ip:port 就是一个房间）
+    4  加入房间         5  开一个房间
 
     0  退出
   ──────────────────────────────────────────────────────────
@@ -74,96 +73,95 @@
 
   <h2>默认 · 日志流 <span class="cmd">npx dou-cl -g doudizhu</span></h2>
   <p class="hint">tail -f 一个服务日志 &nbsp;·&nbsp; hand[] / peers[] / table= 就是牌局</p>
-  <div class="term"><pre><span style="color:#7b8794">2026-10-08 14:22:53.020</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.cache.LruCache     </span> get key=deck:D15B hit=true ttl=27
-<span style="color:#7b8794">2026-10-08 14:22:53.021</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.metrics.Meter      </span> flush points=128 cost=1ms
-<span style="color:#7b8794">2026-10-08 14:22:53.023</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> pool=<span style="color:#d7af87">D15B</span> seq=1 event=state.sync
-<span style="color:#7b8794">2026-10-08 14:22:53.023</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> phase=play turn=<span style="color:#afd787">self</span> self=pending
-<span style="color:#7b8794">2026-10-08 14:22:53.024</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> hand[17]=<span style="color:#87d787">[w Ac Ad Kh Qs Qd Jh Jc 0h 0d 8c 7h 5d 4c 4d 3s 3c]</span>
-<span style="color:#7b8794">2026-10-08 14:22:53.024</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> peers=<span style="color:#87afd7">[mei:17/farmer fei:3/landlord]</span>
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> table=<span style="color:#d7af5f">fei-&gt;[9h 9c 9d 2s 2d]</span> type=trio2 cards=5
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> bottom=<span style="color:#d7af5f">[9h W 8s]</span>
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> base=2 multiplier=x1
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   self:bid 0
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   mei:bid 0
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:landlord
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:play 3d4s5s6s7c8s9s0cJdQhKdAh [straight]
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   self:pass
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   mei:pass
-<span style="color:#7b8794">2026-10-08 14:22:53.025</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:play 9h9c9d2s2d [trio2]
-<span style="color:#7b8794">2026-10-08 14:22:53.027</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.metrics.Meter      </span> flush points=67 cost=1ms
+  <div class="term"><pre><span style="color:#7b8794">2026-10-09 11:08:57.333</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.cache.LruCache     </span> get key=deck:1E49 hit=true ttl=27
+<span style="color:#7b8794">2026-10-09 11:08:57.334</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.metrics.Meter      </span> flush points=128 cost=1ms
+<span style="color:#7b8794">2026-10-09 11:08:57.336</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> pool=<span style="color:#d7af87">1E49</span> seq=1 event=state.sync
+<span style="color:#7b8794">2026-10-09 11:08:57.336</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> phase=play turn=<span style="color:#afd787">self</span> self=pending
+<span style="color:#7b8794">2026-10-09 11:08:57.337</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> hand[17]=<span style="color:#87d787">[w Ah Ks Kd Qh Qc Qd 9s 8c 7s 7h 7c 5c 5d 3s 3h 3c]</span>
+<span style="color:#7b8794">2026-10-09 11:08:57.337</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> peers=<span style="color:#87afd7">[mei:17/farmer fei:7/landlord]</span>
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> table=<span style="color:#d7af5f">fei-&gt;[Jh Jc Jd Kh Kc]</span> type=trio2 cards=5
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> bottom=<span style="color:#d7af5f">[4s Jh 6c]</span>
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService   </span> base=3 multiplier=x1
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   mei:bid 1
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:bid 3
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:landlord
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:play 4s4h4c4d6s6c0h0c [four2pair]
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   self:pass
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   mei:pass
+<span style="color:#7b8794">2026-10-09 11:08:57.338</span> <span style="color:#3fa66a">INFO </span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.deck.SyncService$Replay</span>   fei:play JhJcJdKhKc [trio2]
+<span style="color:#7b8794">2026-10-09 11:08:57.340</span> <span style="color:#7b8794">DEBUG</span> [pool-3-thread-2] <span style="color:#4cb7d8">c.acme.metrics.Meter      </span> flush points=67 cost=1ms
 <span style="color:#7b8794">[tail -f</span>] <span style="font-weight:700">$ </span>_</pre></div>
 
   <h2>换肤 · hexdump <span class="cmd">npx dou-cl --skin hex</span></h2>
   <p class="hint">xxd 转储 &nbsp;·&nbsp; hex 是真字节，右边 ASCII 列就是要读的</p>
   <div class="term"><pre>$ xxd -c 24 logs/deck-sync.log
-<span style="color:#7b8794">00000000</span>: 32303236 2d31302d 30382031 343a3232 3a35332e 30323820  2026-10-08 14:22:53.028 
+<span style="color:#7b8794">00000000</span>: 32303236 2d31302d 30392031 313a3038 3a35372e 33343120  2026-10-09 11:08:57.341 
 <span style="color:#7b8794">00000018</span>: 44454255 47206465 636b2e73 796e6320 20202020 20706f6f  DEBUG deck.sync      poo
-<span style="color:#7b8794">00000030</span>: 6c3d3336 45382073 65713d31 0a323032 362d3130 2d303820  l=<span style="color:#d7af87">3</span><span style="color:#d7af87">6</span><span style="color:#d7af87">E</span><span style="color:#d7af87">8</span> seq=1.2026-10-08 
-<span style="color:#7b8794">00000048</span>: 31343a32 323a3533 2e303239 20444542 55472063 61636865  14:22:53.029 DEBUG cache
-<span style="color:#7b8794">00000060</span>: 2e4c7275 43616368 65206765 74206b65 793d6465 636b3a33  .LruCache get key=deck:3
-<span style="color:#7b8794">00000078</span>: 36453820 6869743d 74727565 2074746c 3d32370a 32303236  6E8 hit=true ttl=27.2026
-<span style="color:#7b8794">00000090</span>: 2d31302d 30382031 343a3232 3a35332e 30333020 494e464f  -10-08 14:22:53.030 INFO
+<span style="color:#7b8794">00000030</span>: 6c3d3446 33362073 65713d31 0a323032 362d3130 2d303920  l=<span style="color:#d7af87">4</span><span style="color:#d7af87">F</span><span style="color:#d7af87">3</span><span style="color:#d7af87">6</span> seq=1.2026-10-09 
+<span style="color:#7b8794">00000048</span>: 31313a30 383a3537 2e333432 20444542 55472063 61636865  11:08:57.342 DEBUG cache
+<span style="color:#7b8794">00000060</span>: 2e4c7275 43616368 65206765 74206b65 793d6465 636b3a34  .LruCache get key=deck:4
+<span style="color:#7b8794">00000078</span>: 46333620 6869743d 74727565 2074746c 3d32370a 32303236  F36 hit=true ttl=27.2026
+<span style="color:#7b8794">00000090</span>: 2d31302d 30392031 313a3038 3a35372e 33343320 494e464f  -10-09 11:08:57.343 INFO
 <span style="color:#7b8794">000000a8</span>: 20206465 636b2e73 796e6320 20202020 20706861 73653d70    deck.sync      phase=p
 <span style="color:#7b8794">000000c0</span>: 6c617920 7475726e 3d73656c 662a3e0a 32303236 2d31302d  lay turn=<span style="color:#afd787">s</span><span style="color:#afd787">e</span><span style="color:#afd787">l</span><span style="color:#afd787">f</span><span style="color:#afd787">*</span><span style="color:#afd787">&gt;</span>.2026-10-
-<span style="color:#7b8794">000000d8</span>: 30382031 343a3232 3a35332e 30333020 494e464f 20206465  08 14:22:53.030 INFO  de
-<span style="color:#7b8794">000000f0</span>: 636b2e73 796e6320 20202020 2068616e 645b3233 5d3d5b77  ck.sync      hand[23]=<span style="color:#87d787">[</span><span style="color:#87d787">w</span>
-<span style="color:#7b8794">00000108</span>: 20327320 32682032 63204168 20416320 4b632051 63205163  <span style="color:#87d787"> </span><span style="color:#87d787">2</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">2</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">2</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">A</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">A</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">K</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">Q</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">Q</span><span style="color:#87d787">c</span>
-<span style="color:#7b8794">00000120</span>: 204a7320 30732030 73203973 20396820 39632038 73203873  <span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">0</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">0</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">9</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">9</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">9</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">8</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">8</span><span style="color:#87d787">s</span>
-<span style="color:#7b8794">00000138</span>: 20376820 37642036 68203664 20356820 34635d0a 32303236  <span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">6</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">6</span><span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">5</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">4</span><span style="color:#87d787">c</span><span style="color:#87d787">]</span>.2026
-<span style="color:#7b8794">00000150</span>: 2d31302d 30382031 343a3232 3a35332e 30333120 494e464f  -10-08 14:22:53.031 INFO
-<span style="color:#7b8794">00000168</span>: 20206465 636b2e73 796e6320 20202020 20706565 72733d5b    deck.sync      peers=<span style="color:#87afd7">[</span>
-<span style="color:#7b8794">00000180</span>: 6d65693a 32372066 65693a31 38207761 6e673a31 345d0a32  <span style="color:#87afd7">m</span><span style="color:#87afd7">e</span><span style="color:#87afd7">i</span><span style="color:#87afd7">:</span><span style="color:#87afd7">2</span><span style="color:#87afd7">7</span><span style="color:#87afd7"> </span><span style="color:#87afd7">f</span><span style="color:#87afd7">e</span><span style="color:#87afd7">i</span><span style="color:#87afd7">:</span><span style="color:#87afd7">1</span><span style="color:#87afd7">8</span><span style="color:#87afd7"> </span><span style="color:#87afd7">w</span><span style="color:#87afd7">a</span><span style="color:#87afd7">n</span><span style="color:#87afd7">g</span><span style="color:#87afd7">:</span><span style="color:#87afd7">1</span><span style="color:#87afd7">4</span><span style="color:#87afd7">]</span>.2
-<span style="color:#7b8794">00000198</span>: 3032362d 31302d30 38203134 3a32323a 35332e30 33312049  026-10-08 14:22:53.031 I
-<span style="color:#7b8794">000001b0</span>: 4e464f20 20646563 6b2e7379 6e632020 20202020 7461626c  NFO  deck.sync      tabl
-<span style="color:#7b8794">000001c8</span>: 653d7761 6e672d3e 5b517320 51682051 68203868 2038645d  e=<span style="color:#d7af5f">w</span><span style="color:#d7af5f">a</span><span style="color:#d7af5f">n</span><span style="color:#d7af5f">g</span><span style="color:#d7af5f">-</span><span style="color:#d7af5f">&gt;</span><span style="color:#d7af5f">[</span><span style="color:#d7af5f">Q</span><span style="color:#d7af5f">s</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">Q</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">Q</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">8</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">8</span><span style="color:#d7af5f">d</span><span style="color:#d7af5f">]</span>
-<span style="color:#7b8794">000001e0</span>: 20747269 6f320a32 3032362d 31302d30 38203134 3a32323a   trio2.2026-10-08 14:22:
-<span style="color:#7b8794">000001f8</span>: 35332e30 33322049 4e464f20 20646563 6b2e7379 6e632020  53.032 INFO  deck.sync  
-<span style="color:#7b8794">00000210</span>: 20202020 20207761 6e673a70 6173730a 32303236 2d31302d        wang:pass.2026-10-
-<span style="color:#7b8794">00000228</span>: 30382031 343a3232 3a35332e 30333220 494e464f 20206465  08 14:22:53.032 INFO  de
-<span style="color:#7b8794">00000240</span>: 636b2e73 796e6320 20202020 20202073 656c663a 70617373  ck.sync        self:pass
-<span style="color:#7b8794">00000258</span>: 0a323032 362d3130 2d303820 31343a32 323a3533 2e303332  .2026-10-08 14:22:53.032
-<span style="color:#7b8794">00000270</span>: 20494e46 4f202064 65636b2e 73796e63 20202020 20202020   INFO  deck.sync        
-<span style="color:#7b8794">00000288</span>: 6d65693a 70617373 0a323032 362d3130 2d303820 31343a32  mei:pass.2026-10-08 14:2
-<span style="color:#7b8794">000002a0</span>: 323a3533 2e303332 20494e46 4f202064 65636b2e 73796e63  2:53.032 INFO  deck.sync
-<span style="color:#7b8794">000002b8</span>: 20202020 20202020 6665693a 73636f72 65202b32 300a3230          fei:score +20.20
-<span style="color:#7b8794">000002d0</span>: 32362d31 302d3038 2031343a 32323a35 332e3033 3220494e  26-10-08 14:22:53.032 IN
-<span style="color:#7b8794">000002e8</span>: 464f2020 6465636b 2e73796e 63202020 20202020 20666569  FO  deck.sync        fei
-<span style="color:#7b8794">00000300</span>: 3a706c61 79203973 39683963 33733364 205b7472 696f325d  :play 9s9h9c3s3d [trio2]
-<span style="color:#7b8794">00000318</span>: 0a323032 362d3130 2d303820 31343a32 323a3533 2e303332  .2026-10-08 14:22:53.032
-<span style="color:#7b8794">00000330</span>: 20494e46 4f202064 65636b2e 73796e63 20202020 20202020   INFO  deck.sync        
-<span style="color:#7b8794">00000348</span>: 77616e67 3a706c61 79205173 51685168 38683864 205b7472  wang:play QsQhQh8h8d [tr
-<span style="color:#7b8794">00000360</span>: 696f325d 0a                                            io2].
+<span style="color:#7b8794">000000d8</span>: 30392031 313a3038 3a35372e 33343320 494e464f 20206465  09 11:08:57.343 INFO  de
+<span style="color:#7b8794">000000f0</span>: 636b2e73 796e6320 20202020 2068616e 645b3135 5d3d5b4b  ck.sync      hand[15]=<span style="color:#87d787">[</span><span style="color:#87d787">K</span>
+<span style="color:#7b8794">00000108</span>: 68204b63 204b6420 4a73204a 68204a63 204a6320 4a642030  <span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">K</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">K</span><span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">J</span><span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">0</span>
+<span style="color:#7b8794">00000120</span>: 64203964 20377320 37732037 68203763 2036645d 0a323032  <span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">9</span><span style="color:#87d787">d</span><span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">s</span><span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">h</span><span style="color:#87d787"> </span><span style="color:#87d787">7</span><span style="color:#87d787">c</span><span style="color:#87d787"> </span><span style="color:#87d787">6</span><span style="color:#87d787">d</span><span style="color:#87d787">]</span>.202
+<span style="color:#7b8794">00000138</span>: 362d3130 2d303920 31313a30 383a3537 2e333434 20494e46  6-10-09 11:08:57.344 INF
+<span style="color:#7b8794">00000150</span>: 4f202064 65636b2e 73796e63 20202020 20207065 6572733d  O  deck.sync      peers=
+<span style="color:#7b8794">00000168</span>: 5b6d6569 3a313220 6665693a 32332077 616e673a 32335d0a  <span style="color:#87afd7">[</span><span style="color:#87afd7">m</span><span style="color:#87afd7">e</span><span style="color:#87afd7">i</span><span style="color:#87afd7">:</span><span style="color:#87afd7">1</span><span style="color:#87afd7">2</span><span style="color:#87afd7"> </span><span style="color:#87afd7">f</span><span style="color:#87afd7">e</span><span style="color:#87afd7">i</span><span style="color:#87afd7">:</span><span style="color:#87afd7">2</span><span style="color:#87afd7">3</span><span style="color:#87afd7"> </span><span style="color:#87afd7">w</span><span style="color:#87afd7">a</span><span style="color:#87afd7">n</span><span style="color:#87afd7">g</span><span style="color:#87afd7">:</span><span style="color:#87afd7">2</span><span style="color:#87afd7">3</span><span style="color:#87afd7">]</span>.
+<span style="color:#7b8794">00000180</span>: 32303236 2d31302d 30392031 313a3038 3a35372e 33343420  2026-10-09 11:08:57.344 
+<span style="color:#7b8794">00000198</span>: 494e464f 20206465 636b2e73 796e6320 20202020 20746162  INFO  deck.sync      tab
+<span style="color:#7b8794">000001b0</span>: 6c653d6d 65692d3e 5b356820 3068204b 685d2066 69667479  le=<span style="color:#d7af5f">m</span><span style="color:#d7af5f">e</span><span style="color:#d7af5f">i</span><span style="color:#d7af5f">-</span><span style="color:#d7af5f">&gt;</span><span style="color:#d7af5f">[</span><span style="color:#d7af5f">5</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">0</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f"> </span><span style="color:#d7af5f">K</span><span style="color:#d7af5f">h</span><span style="color:#d7af5f">]</span> fifty
+<span style="color:#7b8794">000001c8</span>: 6b0a3230 32362d31 302d3039 2031313a 30383a35 372e3334  k.2026-10-09 11:08:57.34
+<span style="color:#7b8794">000001e0</span>: 3520494e 464f2020 6465636b 2e73796e 63202020 20202020  5 INFO  deck.sync       
+<span style="color:#7b8794">000001f8</span>: 2077616e 673a7061 73730a32 3032362d 31302d30 39203131   wang:pass.2026-10-09 11
+<span style="color:#7b8794">00000210</span>: 3a30383a 35372e33 34352049 4e464f20 20646563 6b2e7379  :08:57.345 INFO  deck.sy
+<span style="color:#7b8794">00000228</span>: 6e632020 20202020 20207365 6c663a73 636f7265 202b3130  nc        self:score +10
+<span style="color:#7b8794">00000240</span>: 0a323032 362d3130 2d303920 31313a30 383a3537 2e333435  .2026-10-09 11:08:57.345
+<span style="color:#7b8794">00000258</span>: 20494e46 4f202064 65636b2e 73796e63 20202020 20202020   INFO  deck.sync        
+<span style="color:#7b8794">00000270</span>: 73656c66 3a706c61 79203368 33643364 34733463 34645168  self:play 3h3d3d4s4c4dQh
+<span style="color:#7b8794">00000288</span>: 51633263 3264205b 706c616e 65325d0a 32303236 2d31302d  Qc2c2d [plane2].2026-10-
+<span style="color:#7b8794">000002a0</span>: 30392031 313a3038 3a35372e 33343520 494e464f 20206465  09 11:08:57.345 INFO  de
+<span style="color:#7b8794">000002b8</span>: 636b2e73 796e6320 20202020 2020206d 65693a70 6c617920  ck.sync        mei:play 
+<span style="color:#7b8794">000002d0</span>: 35683068 4b68205b 66696674 796b5d0a 32303236 2d31302d  5h0hKh [fiftyk].2026-10-
+<span style="color:#7b8794">000002e8</span>: 30392031 313a3038 3a35372e 33343520 494e464f 20206465  09 11:08:57.345 INFO  de
+<span style="color:#7b8794">00000300</span>: 636b2e73 796e6320 20202020 20202066 65693a70 6173730a  ck.sync        fei:pass.
+<span style="color:#7b8794">00000318</span>: 32303236 2d31302d 30392031 313a3038 3a35372e 33343520  2026-10-09 11:08:57.345 
+<span style="color:#7b8794">00000330</span>: 494e464f 20206465 636b2e73 796e6320 20202020 20202077  INFO  deck.sync        w
+<span style="color:#7b8794">00000348</span>: 616e673a 70617373 0a                                   ang:pass.
 <span style="color:#3fa66a">dev@ws</span>:<span style="color:#4a7fd0">~/svc</span>$ _</pre></div>
 
   <h2>换肤 · JSON 应答 <span class="cmd">npx dou-cl --skin json</span></h2>
   <p class="hint">WS 帧 + jq 配色 &nbsp;·&nbsp; 去掉颜色就是合法 JSON</p>
-  <div class="term"><pre><span style="color:#7b8794">14:22:53.031</span> <span style="color:#7b8794">DEBUG</span> [ws-client ] &lt;- {"type":"deck.state","seq":1}
+  <div class="term"><pre><span style="color:#7b8794">11:08:57.343</span> <span style="color:#7b8794">DEBUG</span> [ws-client ] &lt;- {"type":"deck.state","seq":1}
 {
-  <span style="color:#4cb7d8">"ts"</span>: <span style="color:#3fa66a">"2026-10-08T14:22:53.031+08:00"</span>,
+  <span style="color:#4cb7d8">"ts"</span>: <span style="color:#3fa66a">"2026-10-09T11:08:57.343+08:00"</span>,
   <span style="color:#4cb7d8">"seq"</span>: <span style="color:#d9a441">1</span>,
-  <span style="color:#4cb7d8">"pool"</span>: <span style="color:#3fa66a">"9D7D"</span>,
+  <span style="color:#4cb7d8">"pool"</span>: <span style="color:#3fa66a">"0C35"</span>,
   <span style="color:#4cb7d8">"game"</span>: <span style="color:#3fa66a">"paodekuai"</span>,
   <span style="color:#4cb7d8">"phase"</span>: <span style="color:#3fa66a">"play"</span>,
   <span style="color:#4cb7d8">"turn"</span>: <span style="color:#3fa66a">"self"</span>,
   <span style="color:#4cb7d8">"self"</span>: {
     <span style="color:#4cb7d8">"id"</span>: <span style="color:#3fa66a">"self"</span>,
     <span style="color:#4cb7d8">"pending"</span>: <span style="color:#b45fbf">true</span>,
-    <span style="color:#4cb7d8">"hand"</span>: [<span style="color:#87d787">"Ks"</span>, <span style="color:#87d787">"Kc"</span>, <span style="color:#87d787">"Kd"</span>, <span style="color:#87d787">"Jh"</span>, <span style="color:#87d787">"Jd"</span>, <span style="color:#87d787">"0h"</span>, <span style="color:#87d787">"0c"</span>, <span style="color:#87d787">"0d"</span>, <span style="color:#87d787">"9c"</span>, <span style="color:#87d787">"9d"</span>, <span style="color:#87d787">"6c"</span>, <span style="color:#87d787">"3c"</span>],
-    <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">12</span>
+    <span style="color:#4cb7d8">"hand"</span>: [<span style="color:#87d787">"As"</span>, <span style="color:#87d787">"Kc"</span>, <span style="color:#87d787">"Qd"</span>, <span style="color:#87d787">"0d"</span>, <span style="color:#87d787">"9h"</span>, <span style="color:#87d787">"9c"</span>, <span style="color:#87d787">"5s"</span>, <span style="color:#87d787">"3c"</span>],
+    <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">8</span>
   },
   <span style="color:#4cb7d8">"peers"</span>: [
-    { <span style="color:#4cb7d8">"id"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">6</span>, <span style="color:#4cb7d8">"out"</span>: <span style="color:#b45fbf">false</span>, <span style="color:#4cb7d8">"score"</span>: <span style="color:#d9a441">0</span> },
-    { <span style="color:#4cb7d8">"id"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">11</span>, <span style="color:#4cb7d8">"out"</span>: <span style="color:#b45fbf">false</span>, <span style="color:#4cb7d8">"score"</span>: <span style="color:#d9a441">0</span> }
+    { <span style="color:#4cb7d8">"id"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">8</span>, <span style="color:#4cb7d8">"out"</span>: <span style="color:#b45fbf">false</span>, <span style="color:#4cb7d8">"score"</span>: <span style="color:#d9a441">0</span> },
+    { <span style="color:#4cb7d8">"id"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"hold"</span>: <span style="color:#d9a441">15</span>, <span style="color:#4cb7d8">"out"</span>: <span style="color:#b45fbf">false</span>, <span style="color:#4cb7d8">"score"</span>: <span style="color:#d9a441">0</span> }
   ],
-  <span style="color:#4cb7d8">"table"</span>: { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"6h"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"single"</span> },
+  <span style="color:#4cb7d8">"table"</span>: { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"Ah"</span>, <span style="color:#3fa66a">"Ac"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"pair"</span> },
   <span style="color:#4cb7d8">"recent"</span>: [
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"4h"</span>, <span style="color:#3fa66a">"4c"</span>, <span style="color:#3fa66a">"4d"</span>, <span style="color:#3fa66a">"7h"</span>, <span style="color:#3fa66a">"7d"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"trio2"</span> },
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"self"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"5s"</span>, <span style="color:#3fa66a">"5h"</span>, <span style="color:#3fa66a">"5d"</span>, <span style="color:#3fa66a">"8s"</span>, <span style="color:#3fa66a">"8c"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"trio2"</span> },
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"Ah"</span>, <span style="color:#3fa66a">"Ac"</span>, <span style="color:#3fa66a">"Ad"</span>, <span style="color:#3fa66a">"7s"</span>, <span style="color:#3fa66a">"7c"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"trio2"</span> },
     { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"pass"</span> },
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"self"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"pass"</span> },
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"4s"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"single"</span> },
-    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"6h"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"single"</span> }
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"self"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"7h"</span>, <span style="color:#3fa66a">"8c"</span>, <span style="color:#3fa66a">"9s"</span>, <span style="color:#3fa66a">"0h"</span>, <span style="color:#3fa66a">"Jc"</span>, <span style="color:#3fa66a">"Qs"</span>, <span style="color:#3fa66a">"Ks"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"straight"</span> },
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"pass"</span> },
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"pass"</span> },
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"self"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"4s"</span>, <span style="color:#3fa66a">"4d"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"pair"</span> },
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"mei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"Qh"</span>, <span style="color:#3fa66a">"Qc"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"pair"</span> },
+    { <span style="color:#4cb7d8">"by"</span>: <span style="color:#3fa66a">"fei"</span>, <span style="color:#4cb7d8">"action"</span>: <span style="color:#3fa66a">"play"</span>, <span style="color:#4cb7d8">"cards"</span>: [<span style="color:#3fa66a">"Ah"</span>, <span style="color:#3fa66a">"Ac"</span>], <span style="color:#4cb7d8">"type"</span>: <span style="color:#3fa66a">"pair"</span> }
   ],
   <span style="color:#4cb7d8">"result"</span>: <span style="color:#b45fbf">null</span>
 }
@@ -173,50 +171,49 @@ node<span style="color:#7b8794"> &gt; </span>_</pre></div>
   <p class="hint">YAML 统一 diff &nbsp;·&nbsp; 绿色 + 行是当前牌局，diff 可 apply</p>
   <div class="term"><pre>$ git diff -U50 -- src/deck/session.yaml
 <span style="font-weight:700">diff --git a/src/deck/session.yaml b/src/deck/session.yaml</span>
-index 5423b92..142376b 100644
+index 5568106..025f5f3 100644
 <span style="font-weight:700">--- a/src/deck/session.yaml</span>
 <span style="font-weight:700">+++ b/src/deck/session.yaml</span>
 <span style="color:#4cb7d8">@@ -1,23 +1,23 @@</span>
  session:
-   pool: 1925
+   pool: C5C0
 <span style="color:#d78787">-  seq: 1</span>
 <span style="color:#87d787">+  seq: 2</span>
    game: doudizhu
    phase: play
    turn: self
    self:
-     hand: [w, 2s, Ac, Ad, Kh, Qs, Jd, 9s, 9h, 9d, 7h, 6s, 6h, 4h, 4d, 3c]
-     hold: 16
+     hand: [2c, 2d, As, Qs, Jd, 0c, 9h, 9c, 9d, 8s, 8d, 7c, 6h, 5h, 4c, 4d, 3d]
+     hold: 17
    peers:
-     - { id: mei, hold: 17, role: farmer, out: false, score: 0 }
-     - { id: fei, hold: 3, role: landlord, out: false, score: 0 }
-   table: { by: fei, cards: [8c], type: single }
-   bottom: [0h, Qc, W]
+     - { id: mei, hold: 6, role: landlord, out: false, score: 0 }
+     - { id: fei, hold: 15, role: farmer, out: false, score: 0 }
+   table: { by: fei, cards: [0s], type: single }
+   bottom: [4s, 0d, 4h]
    recent:
-     - fei:play 0h0c0dJsJhJcQhQcQd5h5cKsKc2h2c [plane2]
+     - fei:pass
      - self:pass
-     - mei:pass
-     - fei:play 3d [single]
-     - self:play 4s [single]
-     - mei:pass
-     - fei:play 8c [single]
+     - mei:play 4h [single]
+     - fei:play 5c [single]
+     - self:pass
+     - mei:play 7h [single]
+     - fei:play 0s [single]
    result: null
 <span style="color:#3fa66a">dev@ws</span>:<span style="color:#4a7fd0">~/svc</span><span style="color:#7b8794"> (main)</span>$ _</pre></div>
 
 
   <div class="sep"></div>
-  <h2>联网房间 <span class="cmd">npx dou-cl --create doudizhu</span></h2>
+  <h2>联网房间 <span class="cmd">npx dou-cl --serve --port 8080</span></h2>
   <div class="term"><pre>
-  房间 ABCD   斗地主 · 3 人
-  ──────────────────────────────────────────────────
-   1号位  你
-   2号位  空
-   3号位  空
-  ──────────────────────────────────────────────────
-   把房间号发给朋友，或让他们执行：
-   npx dou-cl --join 192.168.1.10:8080 --code ABCD
+  房间 192.168.1.10:8080   斗地主 · 3 人
+  ────────────────────────────────────────────────────
+   1 号位   你
+   2 号位   空 · 等待加入
+   3 号位   空 · 等待加入
+  ────────────────────────────────────────────────────
+   等待玩家 1/3    朋友加入： npx dou-cl --join 192.168.1.10:8080
 
-  按 Enter 开始游戏（不足的位置由电脑补上）&gt; _</pre></div>
+[s] 用电脑补齐先开局   [q] 退出 &gt; _</pre></div>
 
   <h2>牌面表示</h2>
   <table>
@@ -235,7 +232,7 @@ index 5423b92..142376b 100644
     <div class="card"><h3>出牌</h3><p>直接敲点数：<span class="key">34567</span> 或 <span class="key">3 4 5 6 7</span>；指定花色 <span class="key">5s 5h</span>。要五十K / 同花顺直接敲 <span class="key">50K</span> / <span class="key">56789</span>，程序自动挑同花色那组。</p></div>
     <div class="card"><h3>命令</h3><p><span class="key">p</span> 不要 &nbsp; <span class="key">h</span> 提示 &nbsp; <span class="key">?</span> 帮助 &nbsp; <span class="key">quit</span> 退出</p></div>
     <div class="card"><h3>伪装相关</h3><p><span class="key">reveal</span> 看真身 &nbsp; <span class="key">redraw</span> 重画 &nbsp; <span class="key">skin log|hex|json|diff</span> 换皮肤</p></div>
-    <div class="card"><h3>联网</h3><p>房主 <span class="key">--serve</span>，其他人 <span class="key">--join 地址 --code 房间号</span>，或 <span class="key">--match 玩法</span>。人数不够由电脑补齐。</p></div>
+    <div class="card"><h3>联网</h3><p>一个 <span class="key">ip:port</span> 就是一个房间：本机 <span class="key">--serve --port 8080</span>，别人 <span class="key">--join 地址:端口</span>。人满回绝，人不够就等 —— <span class="key">s</span> 让电脑补齐先开局，<span class="key">q</span> 退出。</p></div>
   </div>
 
   <div class="sep"></div>
@@ -244,60 +241,60 @@ index 5423b92..142376b 100644
   <h2>斗地主 <span class="cmd">npx dou-cl -g doudizhu</span></h2>
   <div class="term"><pre>
 <span style="font-weight:700"> 斗地主 · 底分 3</span>
-<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 农民 17张  |    (电脑) <span style="font-weight:700">小美</span> 农民 17张  |    (电脑) <span style="font-weight:700">阿飞</span> <span style="color:#d9a441">地主</span> 14张
- 底牌: <span style="color:#e5484d">J♦</span> A♣ <span style="color:#e5484d">2♦</span>
+<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 农民 17张  |    (电脑) <span style="font-weight:700">小美</span> <span style="color:#d9a441">地主</span> 10张  |    (电脑) <span style="font-weight:700">阿飞</span> 农民 17张
+ 底牌: 5♣ <span style="color:#e5484d">Q♦</span> A♣
  ──────────────────────────────────────────────────────────
  最近:
-  你    叫 1 分
-  小美  不叫
-  阿飞  叫 3 分
-  阿飞  <span style="color:#d9a441">抢到地主</span>
-  阿飞  出  3♣ 4♣ 5♠ 6♠ 7♠ <span style="color:#e5484d">8♥</span>   顺子
+  你    叫 2 分
+  小美  叫 3 分
+  小美  <span style="color:#d9a441">抢到地主</span>
+  小美  出  5♠ 6♠ 7♠ 8♣ <span style="color:#e5484d">9♥</span> 0♣ J♠ <span style="color:#e5484d">Q♥</span> <span style="color:#e5484d">K♦</span> A♣   顺子
+  阿飞  不要
  ──────────────────────────────────────────────────────────
- 场上最大: 阿飞 的 3♣ 4♣ 5♠ 6♠ 7♠ <span style="color:#e5484d">8♥</span>  顺子
+ 场上最大: 小美 的 5♠ 6♠ 7♠ 8♣ <span style="color:#e5484d">9♥</span> 0♣ J♠ <span style="color:#e5484d">Q♥</span> <span style="color:#e5484d">K♦</span> A♣  顺子
  ──────────────────────────────────────────────────────────
  你的手牌 (17张):
-  2♠ 2♣ K♠ <span style="color:#e5484d">Q♥</span> <span style="color:#e5484d">Q♦</span> <span style="color:#e5484d">0♥</span> 0♣ 9♠ 9♣ <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">6♥</span> 6♣ <span style="color:#e5484d">6♦</span> <span style="color:#e5484d">5♥</span> 4♠ 3♠ <span style="color:#e5484d">3♦</span>
+  <span style="color:#4cb7d8">w</span> <span style="color:#e5484d">A♦</span> K♠ <span style="color:#e5484d">K♥</span> K♣ <span style="color:#e5484d">J♥</span> J♣ <span style="color:#e5484d">J♦</span> <span style="color:#e5484d">0♥</span> <span style="color:#e5484d">0♦</span> 9♠ <span style="color:#e5484d">8♦</span> <span style="color:#e5484d">7♦</span> 6♣ <span style="color:#e5484d">5♥</span> 4♠ 4♣
 
 出牌 (例: 34567 或 5 5 5 6 / p 不要 / h 提示 / ? 帮助) &gt; _</pre></div>
 
   <h2>跑得快 <span class="cmd">npx dou-cl -g paodekuai</span></h2>
   <div class="term"><pre>
 <span style="font-weight:700"> 跑得快</span>
-<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 13张  |    (电脑) <span style="font-weight:700">小美</span> 13张  |    (电脑) <span style="font-weight:700">阿飞</span> 11张
+<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 9张  |    (电脑) <span style="font-weight:700">小美</span> 13张  |    (电脑) <span style="font-weight:700">阿飞</span> 17张
  ──────────────────────────────────────────────────────────
  最近:
-  你    出  3♠ 3♣ 4♠ <span style="color:#e5484d">4♦</span>   连对
-  小美  出  <span style="color:#e5484d">4♥</span> 4♣ 5♠ <span style="color:#e5484d">5♥</span>   连对
-  阿飞  出  9♠ <span style="color:#e5484d">9♥</span> 0♠ 0♣   连对
-  你    不要
+  你    出  3♠ <span style="color:#e5484d">3♥</span> <span style="color:#e5484d">4♥</span> 4♣   连对
+  小美  出  <span style="color:#e5484d">5♥</span> 5♣ 6♠ 6♣   连对
+  阿飞  不要
+  你    出  <span style="color:#e5484d">K♥</span> K♣ <span style="color:#e5484d">A♥</span> <span style="color:#e5484d">A♦</span>   连对
   小美  不要
-  阿飞  出  6♠ <span style="color:#e5484d">6♦</span>   对子
+  阿飞  不要
  ──────────────────────────────────────────────────────────
- 场上最大: 阿飞 的 6♠ <span style="color:#e5484d">6♦</span>  对子
+ 场上最大: 无（自由出牌）
  ──────────────────────────────────────────────────────────
- 你的手牌 (13张):
-  A♠ A♣ <span style="color:#e5484d">K♥</span> <span style="color:#e5484d">Q♥</span> <span style="color:#e5484d">Q♦</span> <span style="color:#e5484d">J♦</span> <span style="color:#e5484d">0♥</span> <span style="color:#e5484d">9♦</span> 7♠ <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">6♥</span> 6♣ 5♣
+ 你的手牌 (9张):
+  <span style="color:#e5484d">2♥</span> J♠ J♣ 9♠ <span style="color:#e5484d">9♥</span> 7♠ <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">6♥</span> 5♠
 
 出牌 (例: 34567 或 5 5 5 6 / p 不要 / h 提示 / ? 帮助) &gt; _</pre></div>
 
   <h2>510K <span class="cmd">npx dou-cl -g fivek</span></h2>
   <div class="term"><pre>
 <span style="font-weight:700"> 510K</span>
-<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 27张  |    (电脑) <span style="font-weight:700">小美</span> 13张  |    (电脑) <span style="font-weight:700">阿飞</span> 19张  |    (电脑) <span style="font-weight:700">老王</span> 22张
+<span style="font-weight:700">&gt;</span> <span style="color:#3fa66a">[你]</span> <span style="font-weight:700">你</span> 17张  |    (电脑) <span style="font-weight:700">小美</span> 19张  |    (电脑) <span style="font-weight:700">阿飞</span> 23张  |    (电脑) <span style="font-weight:700">老王</span> 27张
  ──────────────────────────────────────────────────────────
  最近:
   老王  不要
-  你    不要
+  你    出  <span style="color:#4cb7d8">w</span> <span style="color:#e5484d">W</span>   王炸
   小美  不要
-  阿飞  <span style="color:#d9a441">收分 +35</span>
-  阿飞  出  3♠ 3♠ <span style="color:#e5484d">3♥</span> 6♣ 6♣   三带二
-  老王  出  <span style="color:#e5484d">4♥</span> 4♣ <span style="color:#e5484d">4♦</span> <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">7♦</span>   三带二
+  阿飞  不要
+  老王  不要
+  你    <span style="color:#d9a441">收分 +10</span>
  ──────────────────────────────────────────────────────────
- 场上最大: 老王 的 <span style="color:#e5484d">4♥</span> 4♣ <span style="color:#e5484d">4♦</span> <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">7♦</span>  三带二
+ 场上最大: 无（自由出牌）
  ──────────────────────────────────────────────────────────
- 你的手牌 (27张):
-  <span style="color:#e5484d">W</span> 2♠ <span style="color:#e5484d">2♦</span> A♠ <span style="color:#e5484d">A♥</span> <span style="color:#e5484d">A♦</span> <span style="color:#e5484d">A♦</span> <span style="color:#e5484d">K♦</span> Q♠ Q♠ <span style="color:#e5484d">Q♥</span> Q♣ <span style="color:#e5484d">Q♦</span> J♣ 0♠ 0♠ <span style="color:#e5484d">0♥</span> 7♠ <span style="color:#e5484d">7♦</span> 6♠ 5♠ <span style="color:#e5484d">5♥</span> <span style="color:#e5484d">5♦</span> <span style="color:#e5484d">5♦</span> 4♠ <span style="color:#e5484d">4♦</span> <span style="color:#e5484d">3♥</span>
+ 你的手牌 (17张):
+  <span style="color:#4cb7d8">w</span> <span style="color:#e5484d">2♥</span> A♠ K♠ <span style="color:#e5484d">K♦</span> J♠ J♠ 0♠ <span style="color:#e5484d">0♥</span> 9♠ 9♣ 8♠ 8♠ <span style="color:#e5484d">8♦</span> <span style="color:#e5484d">7♥</span> <span style="color:#e5484d">7♦</span> <span style="color:#e5484d">5♦</span>
 
 出牌 (例: 34567 或 5 5 5 6 / p 不要 / h 提示 / ? 帮助) &gt; _</pre></div>
 
