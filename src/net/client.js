@@ -86,9 +86,16 @@ async function runClient(io, opts) {
     try { ws.close(); } catch (e) { /* ignore */ }
   }
 
-  function isQuit(line) {
+  /** 明确的退出命令 —— 牌局里也认这几个 */
+  function isQuitCmd(line) {
     const low = (line || '').trim().toLowerCase();
-    return low === 'q' || low === 'quit' || low === 'exit' || low === 'leave';
+    return low === 'quit' || low === 'exit' || low === 'leave';
+  }
+
+  /** 空闲场合（大厅等待 / 局末）额外认单字母 q ——
+   *  牌局里 q 是牌面（Q），所以那里不能用它退出。 */
+  function isQuitLoose(line) {
+    return (line || '').trim().toLowerCase() === 'q' || isQuitCmd(line);
   }
 
   /* ---- Ctrl+C：先说一声再走（别人 / 服务器立刻知道） ---- */
@@ -113,7 +120,7 @@ async function runClient(io, opts) {
     const lines = [r.name + '   ' + r.tagline].concat(r.help || []);
     lines.push('');
     lines.push('出牌：34567 或 3 4 5 6 7 ；带花色 5s 5h 5c');
-    lines.push('p=不要  h=提示  ?=帮助  q=离开');
+    lines.push('p=不要  h=提示  ?=帮助  quit=离开（牌局里 q 是牌面 Q）');
     if (ui.skinActive()) {
       const s = ui.skinHelp(lines);
       if (s !== null) { process.stdout.write(s); return; }
@@ -163,7 +170,7 @@ async function runClient(io, opts) {
     const hint = more ? '[s] 用电脑补齐先开局   [q] 退出' : '[q] 退出';
     io.ask(skin ? ui.skinPrompt() : '\n' + colors.dim(hint) + ' > ', function (line) {
       const low = (line || '').trim().toLowerCase();
-      if (isQuit(low)) { quit(); return; }
+      if (isQuitLoose(low)) { quit(); return; }
       if (low === 's' || low === 'start') { sendMsg({ t: 'start' }); return; }
       if (low === '?' || low === 'help') { printHelp(roomInfo && roomInfo.game); }
       askWaiting();
@@ -224,25 +231,28 @@ async function runClient(io, opts) {
       return;
     }
     const prompt = view.phase === 'bid'
-      ? '\n叫分 (0=不叫 1/2/3=叫分, ?=帮助) > '
-      : '\n出牌 (例: 34567 或 5 5 5 6 / p 不要 / h 提示 / ? 帮助) > ';
+      ? '\n叫分 (0=不叫 1/2/3=叫分 / ? 帮助 / quit 离开) > '
+      : '\n出牌 (例: 34567 或 5 5 5 6 / p 不要 / h 提示 / ? 帮助 / quit 离开) > ';
     io.ask(prompt, function (line) { onTurnInput(line, view); });
   }
 
   /** 轮到我：本地命令优先，其余当作出牌 */
   function onTurnInput(line, view) {
     if (!line) { promptTurn(view); return; }
-    if (isQuit(line)) { quit(); return; }
+    if (isQuitCmd(line)) { quit(); return; }
     if (localCommand(line, view)) { promptTurn(view); return; }
     playInput(line, view);
   }
 
   /** 不是我的回合：本地命令照样能用，想打牌就告诉他还没轮到你 */
   function askIdle(view) {
+    // 局末 / 空闲时 q 也能退出；牌局进行中只有 quit（q 是牌面 Q）
+    const loose = !view || !!view.over;
+    const quitKey = loose ? 'q' : 'quit';
     const prompt = ui.skinActive() ? ui.skinPrompt()
-      : '\n' + colors.dim('[q] 退出   本地命令随时可用： reveal / redraw / skin <名> / ?') + ' > ';
+      : '\n' + colors.dim('[' + quitKey + '] 退出   本地命令随时可用： reveal / redraw / skin <名> / ?') + ' > ';
     io.ask(prompt, function (line) {
-      if (isQuit(line)) { quit(); return; }
+      if (loose ? isQuitLoose(line) : isQuitCmd(line)) { quit(); return; }
       if (localCommand(line, view)) { askIdle(view); return; }
       if ((line || '').trim()) {
         const hint = ui.skinActive()

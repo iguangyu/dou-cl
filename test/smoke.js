@@ -312,7 +312,7 @@ async function testClientLocalCommands() {
       say: function (t) { this.lines.push(String(t)); },
       block: function (t) { this.lines.push(String(t)); },
       clear: function () {},
-      close: function () {},
+      close: function () { this.lines.push('[closed]'); },
       ask: function (p, h) { this.handler = h; this.lastPrompt = String(p); },
     };
     ui.setSkin('log');
@@ -327,6 +327,14 @@ async function testClientLocalCommands() {
 
     if (io.handler) io.handler('skin hex');
     ok(ui.skinKey() === 'hex', '不是自己的回合，敲 skin hex 也立刻换皮肤（' + ui.skinKey() + '）');
+
+    // 回归：牌局里 q 是牌面（Q），绝不能当成退出
+    const closedBefore = io.lines.filter(function (l) { return l === '[closed]'; }).length;
+    if (io.handler) io.handler('q');
+    await sleep(250);
+    const closedAfter = io.lines.filter(function (l) { return l === '[closed]'; }).length;
+    ok(closedAfter === closedBefore, '牌局中敲 q 不会退出（q 是牌面 Q，退出只认 quit）');
+    ok(!!io.handler, '而且还在继续等输入');
 
     let threw = false;
     try { if (io.handler) io.handler('reveal'); } catch (e) { threw = true; }
